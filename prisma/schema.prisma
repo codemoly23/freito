@@ -1,0 +1,3375 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model account {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              user    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Account_userId_fkey")
+
+  @@unique([provider, providerAccountId], map: "Account_provider_providerAccountId_key")
+  @@index([userId], map: "Account_userId_idx")
+}
+
+model approvalpolicy {
+  id                   String    @id
+  companyId            String
+  documentType         approvalpolicy_documentType
+  name                 String
+  branchId             String?
+  thresholdAmountBDT   Decimal   @db.Decimal(14, 2)
+  approverRoleSequence String    @db.Text
+  isActive             Boolean   @default(false)
+  createdById          String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime
+  deletedAt            DateTime?
+  company              company           @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ApprovalPolicy_companyId_fkey")
+  branch               branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull, map: "ApprovalPolicy_branchId_fkey")
+  user                 user?             @relation(fields: [createdById], references: [id], map: "ApprovalPolicy_createdById_fkey")
+  approvalrequest      approvalrequest[]
+
+  @@unique([companyId, documentType, branchId], map: "ApprovalPolicy_companyId_documentType_branchId_key")
+  @@index([companyId, documentType, isActive], map: "ApprovalPolicy_companyId_documentType_isActive_idx")
+}
+
+model approvalrequest {
+  id               String    @id
+  companyId        String
+  branchId         String
+  policyId         String
+  documentType     approvalpolicy_documentType
+  vendorBillId     String?
+  paymentId        String?
+  status           approvalrequest_status @default(PENDING)
+  currentSequence  Int       @default(1)
+  amountBDT        Decimal   @db.Decimal(14, 2)
+  submittedById    String
+  submittedAt      DateTime  @default(now())
+  decidedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  company          company          @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ApprovalRequest_companyId_fkey")
+  branch           branch           @relation(fields: [branchId], references: [id], map: "ApprovalRequest_branchId_fkey")
+  approvalpolicy   approvalpolicy   @relation(fields: [policyId], references: [id], map: "ApprovalRequest_policyId_fkey")
+  vendorbill       vendorbill?      @relation(fields: [vendorBillId], references: [id], onDelete: Cascade, map: "ApprovalRequest_vendorBillId_fkey")
+  payment          payment?         @relation(fields: [paymentId], references: [id], onDelete: Cascade, map: "ApprovalRequest_paymentId_fkey")
+  user             user             @relation(fields: [submittedById], references: [id], map: "ApprovalRequest_submittedById_fkey")
+  approvalstep     approvalstep[]
+  approvaldecision approvaldecision[]
+
+  @@index([companyId, status], map: "ApprovalRequest_companyId_status_idx")
+  @@index([vendorBillId], map: "ApprovalRequest_vendorBillId_idx")
+  @@index([paymentId], map: "ApprovalRequest_paymentId_idx")
+}
+
+model approvalstep {
+  id               String    @id
+  requestId        String
+  sequence         Int
+  approverRoleCode role_code
+  status           approvalstep_status @default(PENDING)
+  decidedById      String?
+  decidedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  approvalrequest  approvalrequest    @relation(fields: [requestId], references: [id], onDelete: Cascade, map: "ApprovalStep_requestId_fkey")
+  user             user?              @relation(fields: [decidedById], references: [id], map: "ApprovalStep_decidedById_fkey")
+  approvaldecision approvaldecision[]
+
+  @@unique([requestId, sequence], map: "ApprovalStep_requestId_sequence_key")
+  @@index([status, approverRoleCode], map: "ApprovalStep_status_approverRoleCode_idx")
+}
+
+model approvaldecision {
+  id              String   @id
+  requestId       String
+  stepId          String
+  decidedById     String
+  decision        approvaldecision_decision
+  remarks         String?  @db.Text
+  createdAt       DateTime @default(now())
+  approvalrequest approvalrequest @relation(fields: [requestId], references: [id], onDelete: Cascade, map: "ApprovalDecision_requestId_fkey")
+  approvalstep    approvalstep    @relation(fields: [stepId], references: [id], onDelete: Cascade, map: "ApprovalDecision_stepId_fkey")
+  user            user            @relation(fields: [decidedById], references: [id], map: "ApprovalDecision_decidedById_fkey")
+
+  @@index([requestId], map: "ApprovalDecision_requestId_idx")
+}
+
+model auditlog {
+  id         String   @id
+  companyId  String?
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String?  @db.LongText
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       user?    @relation(fields: [actorId], references: [id], map: "AuditLog_actorId_fkey")
+  company    company? @relation(fields: [companyId], references: [id], map: "AuditLog_companyId_fkey")
+
+  @@index([actorId], map: "AuditLog_actorId_idx")
+  @@index([companyId], map: "AuditLog_companyId_idx")
+  @@index([createdAt], map: "AuditLog_createdAt_idx")
+  @@index([entityType, entityId], map: "AuditLog_entityType_entityId_idx")
+}
+
+model billoflading {
+  id                        String                      @id
+  companyId                 String
+  shipmentJobId             String                      @unique(map: "BillOfLading_shipmentJobId_key")
+  shippingInstructionId     String?                     @unique(map: "BillOfLading_shippingInstructionId_key")
+  documentType              billoflading_documentType
+  draftNumber               String?
+  draftReceivedAt           DateTime?
+  draftForwardedAt          DateTime?
+  approvalStatus            billoflading_approvalStatus @default(NOT_RECEIVED)
+  customerApprovalAt        DateTime?
+  customerCorrectionRemarks String?                     @db.Text
+  finalNumber               String?
+  finalLocked               Boolean                     @default(false)
+  finalLockedAt             DateTime?
+  releaseType               billoflading_releaseType    @default(NOT_APPLICABLE)
+  releaseStatus             billoflading_releaseStatus  @default(PENDING)
+  releaseRequestedAt        DateTime?
+  releaseConfirmedAt        DateTime?
+  originalCopies            Int?
+  releaseReference          String?
+  paymentReceived           Boolean                     @default(false)
+  notes                     String?                     @db.Text
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime
+  company                   company                     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "BillOfLading_companyId_fkey")
+  shipmentjob               shipmentjob                 @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "BillOfLading_shipmentJobId_fkey")
+  shippinginstruction       shippinginstruction?        @relation(fields: [shippingInstructionId], references: [id], map: "BillOfLading_shippingInstructionId_fkey")
+
+  @@index([approvalStatus], map: "BillOfLading_approvalStatus_idx")
+  @@index([companyId], map: "BillOfLading_companyId_idx")
+  @@index([releaseStatus], map: "BillOfLading_releaseStatus_idx")
+}
+
+model cargoreleasechecklist {
+  id                         String                       @id
+  companyId                  String
+  shipmentJobId              String                       @unique(map: "CargoReleaseChecklist_shipmentJobId_key")
+  status                     cargoreleasechecklist_status @default(NOT_ARRIVED)
+  arrived                    Boolean                      @default(false)
+  arrivedAt                  DateTime?
+  arrivalNoticeReceived      Boolean                      @default(false)
+  arrivalNoticeAt            DateTime?
+  consigneeDocumentsReceived Boolean                      @default(false)
+  shipperPaymentConfirmed    Boolean                      @default(false)
+  customerPaymentConfirmed   Boolean                      @default(false)
+  bankBlAuthenticityVerified Boolean                      @default(false)
+  originalBlReceived         Boolean                      @default(false)
+  telexSurrenderConfirmed    Boolean                      @default(false)
+  deliveryOrderReleased      Boolean                      @default(false)
+  customsReady               Boolean                      @default(false)
+  cargoReleased              Boolean                      @default(false)
+  cargoReleasedAt            DateTime?
+  delivered                  Boolean                      @default(false)
+  deliveredAt                DateTime?
+  holdReason                 String?                      @db.Text
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime
+  consigneeContact           String?
+  deliveredBy                String?
+  deliveryAddress            String?                      @db.Text
+  deliveryDateTime           DateTime?
+  deliveryLocation           String?
+  deliveryOrderNo            String?
+  deliveryRemarks            String?                      @db.Text
+  driverName                 String?
+  driverPhone                String?
+  exceptionReason            String?                      @db.Text
+  gatePassNo                 String?
+  podReferenceNo             String?
+  releaseDate                DateTime?
+  transportVendorId          String?
+  truckVehicleNo             String?
+  verifiedAt                 DateTime?
+  verifiedBy                 String?
+  warehouseName              String?
+  outForDeliveryAt           DateTime?
+  company                    company                      @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "CargoReleaseChecklist_companyId_fkey")
+  shipmentjob                shipmentjob                  @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "CargoReleaseChecklist_shipmentJobId_fkey")
+
+  @@index([companyId], map: "CargoReleaseChecklist_companyId_idx")
+  @@index([status], map: "CargoReleaseChecklist_status_idx")
+}
+
+model carrierproposal {
+  id                  String                   @id
+  companyId           String
+  carrierQueryId      String
+  vendorId            String
+  buyingFreightAmount Decimal                  @db.Decimal(14, 2)
+  localCharges        Decimal                  @default(0.00) @db.Decimal(14, 2)
+  currency            carrierproposal_currency
+  validUntil          DateTime?
+  transitTime         String?
+  etd                 DateTime?
+  eta                 DateTime?
+  freeTime            String?
+  routeNote           String?                  @db.Text
+  terms               String?                  @db.Text
+  providerReference   String?
+  status              carrierproposal_status   @default(RECEIVED)
+  selected            Boolean                  @default(false)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime
+  deletedAt           DateTime?
+  carrierquery        carrierquery             @relation(fields: [carrierQueryId], references: [id], onDelete: Cascade, map: "CarrierProposal_carrierQueryId_fkey")
+  company             company                  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "CarrierProposal_companyId_fkey")
+  vendor              vendor                   @relation(fields: [vendorId], references: [id], map: "CarrierProposal_vendorId_fkey")
+  quotation           quotation[]
+
+  @@index([carrierQueryId], map: "CarrierProposal_carrierQueryId_idx")
+  @@index([companyId], map: "CarrierProposal_companyId_idx")
+  @@index([selected], map: "CarrierProposal_selected_idx")
+  @@index([status], map: "CarrierProposal_status_idx")
+  @@index([vendorId], map: "CarrierProposal_vendorId_idx")
+}
+
+model carrierquery {
+  id                   String              @id
+  companyId            String
+  shipmentRequestId    String?
+  quotationId          String?
+  shipmentJobId        String?
+  vendorId             String
+  mode                 carrierquery_mode
+  origin               String
+  destination          String
+  cargoSummary         String              @db.Text
+  hsCode               String?
+  weight               Decimal?            @db.Decimal(12, 3)
+  cbm                  Decimal?            @db.Decimal(12, 3)
+  packageInfo          String?
+  containerRequirement String?
+  requestedDate        DateTime?
+  status               carrierquery_status @default(DRAFT)
+  querySentAt          DateTime?
+  responseDueAt        DateTime?
+  notes                String?             @db.Text
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime
+  deletedAt            DateTime?
+  carrierproposal      carrierproposal[]
+  company              company             @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "CarrierQuery_companyId_fkey")
+  quotation            quotation?          @relation(fields: [quotationId], references: [id], map: "CarrierQuery_quotationId_fkey")
+  shipmentjob          shipmentjob?        @relation(fields: [shipmentJobId], references: [id], map: "CarrierQuery_shipmentJobId_fkey")
+  shipmentrequest      shipmentrequest?    @relation(fields: [shipmentRequestId], references: [id], map: "CarrierQuery_shipmentRequestId_fkey")
+  vendor               vendor              @relation(fields: [vendorId], references: [id], map: "CarrierQuery_vendorId_fkey")
+
+  @@index([companyId], map: "CarrierQuery_companyId_idx")
+  @@index([quotationId], map: "CarrierQuery_quotationId_fkey")
+  @@index([shipmentJobId], map: "CarrierQuery_shipmentJobId_idx")
+  @@index([shipmentRequestId], map: "CarrierQuery_shipmentRequestId_idx")
+  @@index([status], map: "CarrierQuery_status_idx")
+  @@index([vendorId], map: "CarrierQuery_vendorId_idx")
+}
+
+model clientportalaccount {
+  id                            String                          @id
+  companyId                     String
+  customerId                    String
+  clientCode                    String
+  displayClientCode             String
+  email                         String?
+  phone                         String?
+  passwordHash                  String
+  plainPassword                 String?
+  status                        clientportalaccount_status      @default(ACTIVE)
+  mustChangePassword            Boolean                         @default(true)
+  lastLoginAt                   DateTime?
+  createdById                   String?
+  createdAt                     DateTime                        @default(now())
+  updatedAt                     DateTime
+  deletedAt                     DateTime?
+  company                       company                         @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ClientPortalAccount_companyId_fkey")
+  user                          user?                           @relation(fields: [createdById], references: [id], map: "ClientPortalAccount_createdById_fkey")
+  customer                      customer                        @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "ClientPortalAccount_customerId_fkey")
+  customerportalactivationtoken customerportalactivationtoken[]
+  documentapproval              documentapproval[]
+  notification                  notification[]
+  notificationdelivery          notificationdelivery[]
+  shipmentrequest               shipmentrequest[]
+
+  @@unique([companyId, clientCode], map: "ClientPortalAccount_companyId_clientCode_key")
+  @@unique([companyId, displayClientCode], map: "ClientPortalAccount_companyId_displayClientCode_key")
+  @@index([companyId], map: "ClientPortalAccount_companyId_idx")
+  @@index([createdAt], map: "ClientPortalAccount_createdAt_idx")
+  @@index([createdById], map: "ClientPortalAccount_createdById_fkey")
+  @@index([customerId], map: "ClientPortalAccount_customerId_idx")
+  @@index([email], map: "ClientPortalAccount_email_idx")
+  @@index([phone], map: "ClientPortalAccount_phone_idx")
+  @@index([status], map: "ClientPortalAccount_status_idx")
+}
+
+model clientportalsequence {
+  id              String   @id
+  companyId       String
+  year            Int
+  currentSequence Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  company         company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ClientPortalSequence_companyId_fkey")
+
+  @@unique([companyId, year], map: "ClientPortalSequence_companyId_year_key")
+  @@index([companyId], map: "ClientPortalSequence_companyId_idx")
+}
+
+model communicationaccount {
+  id                        String                        @id
+  companyId                 String
+  userId                    String?
+  provider                  communicationaccount_provider
+  channel                   communicationaccount_channel
+  displayName               String
+  senderEmail               String?
+  senderPhone               String?
+  whatsappPhoneNumberId     String?
+  whatsappBusinessAccountId String?
+  status                    communicationaccount_status   @default(DISCONNECTED)
+  isDefaultCompanyAccount   Boolean                       @default(false)
+  isUserOwned               Boolean                       @default(false)
+  lastConnectedAt           DateTime?
+  lastError                 String?                       @db.Text
+  encryptedConfig           String?                       @db.LongText
+  createdAt                 DateTime                      @default(now())
+  updatedAt                 DateTime
+  deletedAt                 DateTime?
+  company                   company                       @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "CommunicationAccount_companyId_fkey")
+  user                      user?                         @relation(fields: [userId], references: [id], map: "CommunicationAccount_userId_fkey")
+  notificationdelivery      notificationdelivery[]
+
+  @@index([channel], map: "CommunicationAccount_channel_idx")
+  @@index([companyId], map: "CommunicationAccount_companyId_idx")
+  @@index([deletedAt], map: "CommunicationAccount_deletedAt_idx")
+  @@index([provider], map: "CommunicationAccount_provider_idx")
+  @@index([status], map: "CommunicationAccount_status_idx")
+  @@index([userId], map: "CommunicationAccount_userId_idx")
+}
+
+model company {
+  id                            String                          @id
+  name                          String
+  legalName                     String?
+  email                         String?
+  phone                         String?
+  address                       String?
+  status                        company_status                  @default(ACTIVE)
+  createdAt                     DateTime                        @default(now())
+  updatedAt                     DateTime
+  deletedAt                     DateTime?
+  deploymentType                company_deploymentType          @default(CLOUD)
+  maxUsers                      Int?
+  planType                      company_planType                @default(TRIAL)
+  storageLimitMB                Int?
+  subscriptionEndsAt            DateTime?
+  subscriptionStatus            company_subscriptionStatus      @default(TRIAL)
+  trialEndsAt                   DateTime?
+  portalCodePrefix              String?
+  portalDisplayName             String?
+  portalEnabled                 Boolean                         @default(false)
+  portalSlug                    String?                         @unique(map: "Company_portalSlug_key")
+  logoMimeType                  String?
+  logoPath                      String?
+  logoUpdatedAt                 DateTime?
+  hblAccountsLimit              Int                             @default(1)
+  hblArchiveLimit               Int                             @default(1)
+  hblCustomerLimit              Int                             @default(1)
+  hblOfficeLimit                Int                             @default(1)
+  hblOperationsLimit            Int                             @default(1)
+  hblOriginalsLimit             Int                             @default(3)
+  hblPrintWatermarkEnabled      Boolean                         @default(true)
+  approvalpolicy                approvalpolicy[]
+  approvalrequest               approvalrequest[]
+  auditlog                      auditlog[]
+  billoflading                  billoflading[]
+  branch                        branch[]
+  cargoreleasechecklist         cargoreleasechecklist[]
+  carrierproposal               carrierproposal[]
+  carrierquery                  carrierquery[]
+  clientportalaccount           clientportalaccount[]
+  clientportalsequence          clientportalsequence[]
+  communicationaccount          communicationaccount[]
+  companyaisettings             companyaisettings?
+  companymoduleaccess           companymoduleaccess[]
+  companysubscription           companysubscription?
+  container                     container[]
+  customer                      customer[]
+  customerportalactivationtoken customerportalactivationtoken[]
+  documentchecklistitem         documentchecklistitem[]
+  documenttemplate              documenttemplate[]
+  freightbooking                freightbooking[]
+  freightdocument               freightdocument[]
+  freightdocumentsequence       freightdocumentsequence[]
+  importjob                     importjob[]
+  invoice                       invoice[]
+  invoiceline                   invoiceline[]
+  invoicesequence               invoicesequence[]
+  notification                  notification[]
+  notificationdelivery          notificationdelivery[]
+  notificationoptout            notificationoptout[]
+  notificationtemplate          notificationtemplate[]
+  payment                       payment[]
+  paymentsequence               paymentsequence[]
+  prealert                      prealert[]
+  quotation                     quotation[]
+  quotationcharge               quotationcharge[]
+  quotationsequence             quotationsequence[]
+  role                          role[]
+  savedview                     savedview[]
+  shipmentcostitem              shipmentcostitem[]
+  shipmentdocument              shipmentdocument[]
+  shipmentjob                   shipmentjob[]
+  shipmentjobsequence           shipmentjobsequence[]
+  shipmentrequest               shipmentrequest[]
+  shipmentrequestsequence       shipmentrequestsequence[]
+  shipmentstatusevent           shipmentstatusevent[]
+  shipmentworkflowstep          shipmentworkflowstep[]
+  shipmentworkflowtemplatestep  shipmentworkflowtemplatestep[]
+  shippinginstruction           shippinginstruction[]
+  stuffingplan                  stuffingplan[]
+  task                          task[]
+  taskcomment                   taskcomment[]
+  taskrecurrence                taskrecurrence[]
+  user                          user[]
+  userdashboardlayout           userdashboardlayout[]
+  vendor                        vendor[]
+  vendorbill                    vendorbill[]
+  vendorbillline                vendorbillline[]
+  vendorbillsequence            vendorbillsequence[]
+  workflowtemplate              workflowtemplate[]
+
+  @@index([createdAt], map: "Company_createdAt_idx")
+  @@index([planType], map: "Company_planType_idx")
+  @@index([status], map: "Company_status_idx")
+  @@index([subscriptionStatus], map: "Company_subscriptionStatus_idx")
+}
+
+model companyaisettings {
+  id              String                      @id
+  companyId       String                      @unique(map: "CompanyAiSettings_companyId_key")
+  enabled         Boolean                     @default(false)
+  provider        companyaisettings_provider?
+  encryptedApiKey String?                     @db.LongText
+  dailyRequestCap Int?
+  lastTestedAt    DateTime?
+  lastTestResult  String?                     @db.Text
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime
+  company         company                     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "CompanyAiSettings_companyId_fkey")
+}
+
+model companymoduleaccess {
+  id        String                        @id
+  companyId String
+  moduleKey companymoduleaccess_moduleKey
+  isEnabled Boolean                       @default(true)
+  createdAt DateTime                      @default(now())
+  updatedAt DateTime
+  company   company                       @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "CompanyModuleAccess_companyId_fkey")
+
+  @@unique([companyId, moduleKey], map: "CompanyModuleAccess_companyId_moduleKey_key")
+  @@index([companyId], map: "CompanyModuleAccess_companyId_idx")
+  @@index([isEnabled], map: "CompanyModuleAccess_isEnabled_idx")
+  @@index([moduleKey], map: "CompanyModuleAccess_moduleKey_idx")
+}
+
+model companysubscription {
+  id             String                             @id
+  companyId      String                             @unique(map: "CompanySubscription_companyId_key")
+  planType       companysubscription_planType       @default(TRIAL)
+  deploymentType companysubscription_deploymentType @default(CLOUD)
+  status         companysubscription_status         @default(TRIAL)
+  startsAt       DateTime                           @default(now())
+  trialEndsAt    DateTime?
+  expiresAt      DateTime?
+  maxUsers       Int?
+  storageLimitMB Int?
+  remarks        String?                            @db.Text
+  createdAt      DateTime                           @default(now())
+  updatedAt      DateTime
+  company        company                            @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "CompanySubscription_companyId_fkey")
+
+  @@index([companyId], map: "CompanySubscription_companyId_idx")
+  @@index([expiresAt], map: "CompanySubscription_expiresAt_idx")
+  @@index([planType], map: "CompanySubscription_planType_idx")
+  @@index([status], map: "CompanySubscription_status_idx")
+}
+
+model container {
+  id                  String                        @id
+  companyId           String
+  shipmentJobId       String
+  containerNo         String
+  sealNo              String?
+  containerType       String?
+  packageCount        Int?
+  grossWeight         Decimal?                      @db.Decimal(12, 3)
+  cbm                 Decimal?                      @db.Decimal(12, 3)
+  gateInDate          DateTime?
+  gateOutDate         DateTime?
+  freeTimeLastDate    DateTime?
+  demurrageRiskStatus container_demurrageRiskStatus @default(NOT_APPLICABLE)
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime
+  deletedAt           DateTime?
+  cargoReceivedAt     DateTime?
+  loadedAt            DateTime?
+  loadingRemarks      String?                       @db.Text
+  pickupDate          DateTime?
+  company             company                       @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Container_companyId_fkey")
+  shipmentjob         shipmentjob                   @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "Container_shipmentJobId_fkey")
+
+  @@index([companyId], map: "Container_companyId_idx")
+  @@index([containerNo], map: "Container_containerNo_idx")
+  @@index([createdAt], map: "Container_createdAt_idx")
+  @@index([demurrageRiskStatus], map: "Container_demurrageRiskStatus_idx")
+  @@index([shipmentJobId], map: "Container_shipmentJobId_idx")
+}
+
+model customer {
+  id                            String                          @id
+  companyId                     String
+  name                          String
+  code                          String?
+  email                         String?
+  phone                         String?
+  address                       String?
+  binOrVat                      String?
+  status                        customer_status                 @default(ACTIVE)
+  createdAt                     DateTime                        @default(now())
+  updatedAt                     DateTime
+  deletedAt                     DateTime?
+  clientportalaccount           clientportalaccount[]
+  company                       company                         @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Customer_companyId_fkey")
+  customercontact               customercontact[]
+  customerportalactivationtoken customerportalactivationtoken[]
+  invoice                       invoice[]
+  payment                       payment[]
+  quotation                     quotation[]
+  shipmentcostitem              shipmentcostitem[]
+  shipmentjob                   shipmentjob[]
+  shipmentrequest               shipmentrequest[]
+  task                          task[]
+  user                          user[]
+
+  @@unique([companyId, code], map: "Customer_companyId_code_key")
+  @@index([companyId], map: "Customer_companyId_idx")
+  @@index([createdAt], map: "Customer_createdAt_idx")
+  @@index([name], map: "Customer_name_idx")
+  @@index([status], map: "Customer_status_idx")
+}
+
+model customercontact {
+  id          String   @id
+  customerId  String
+  name        String
+  email       String?
+  phone       String?
+  designation String?
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  customer    customer @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "CustomerContact_customerId_fkey")
+
+  @@index([customerId], map: "CustomerContact_customerId_idx")
+}
+
+model customerportalactivationtoken {
+  id                    String              @id
+  companyId             String
+  customerId            String
+  clientPortalAccountId String
+  tokenHash             String              @unique(map: "CustomerPortalActivationToken_tokenHash_key")
+  expiresAt             DateTime
+  usedAt                DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime
+  deletedAt             DateTime?
+  clientportalaccount   clientportalaccount @relation(fields: [clientPortalAccountId], references: [id], onDelete: Cascade, map: "CustomerPortalActivationToken_clientPortalAccountId_fkey")
+  company               company             @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "CustomerPortalActivationToken_companyId_fkey")
+  customer              customer            @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "CustomerPortalActivationToken_customerId_fkey")
+
+  @@index([clientPortalAccountId], map: "CustomerPortalActivationToken_clientPortalAccountId_idx")
+  @@index([companyId], map: "CustomerPortalActivationToken_companyId_idx")
+  @@index([customerId], map: "CustomerPortalActivationToken_customerId_idx")
+  @@index([deletedAt], map: "CustomerPortalActivationToken_deletedAt_idx")
+  @@index([expiresAt], map: "CustomerPortalActivationToken_expiresAt_idx")
+  @@index([usedAt], map: "CustomerPortalActivationToken_usedAt_idx")
+}
+
+model documentapproval {
+  id                  String                        @id
+  freightDocumentId   String
+  versionNumber       Int
+  status              documentapproval_status       @default(PENDING)
+  approverType        documentapproval_approverType
+  approvedById        String?
+  portalAccountId     String?
+  remarks             String?                       @db.Text
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime
+  user                user?                         @relation(fields: [approvedById], references: [id], map: "DocumentApproval_approvedById_fkey")
+  freightdocument     freightdocument               @relation(fields: [freightDocumentId], references: [id], onDelete: Cascade, map: "DocumentApproval_freightDocumentId_fkey")
+  clientportalaccount clientportalaccount?          @relation(fields: [portalAccountId], references: [id], map: "DocumentApproval_portalAccountId_fkey")
+
+  @@index([approvedById], map: "DocumentApproval_approvedById_idx")
+  @@index([freightDocumentId], map: "DocumentApproval_freightDocumentId_idx")
+  @@index([portalAccountId], map: "DocumentApproval_portalAccountId_idx")
+}
+
+model documentchecklistitem {
+  id                           String                              @id
+  companyId                    String?
+  shipmentType                 documentchecklistitem_shipmentType?
+  category                     documentchecklistitem_category
+  name                         String
+  description                  String?                             @db.Text
+  isRequired                   Boolean                             @default(true)
+  sortOrder                    Int                                 @default(0)
+  isActive                     Boolean                             @default(true)
+  createdAt                    DateTime                            @default(now())
+  updatedAt                    DateTime
+  code                         String?
+  containerRequired            Boolean                             @default(false)
+  countryRestriction           String?
+  docCategory                  String                              @default("Shipping")
+  hazardousCargo               Boolean                             @default(false)
+  helpText                     String?                             @db.Text
+  incotermRestriction          String?
+  isOptional                   Boolean                             @default(false)
+  lcRequired                   Boolean                             @default(false)
+  mandatoryBeforeDeliveryOrder Boolean                             @default(false)
+  mandatoryBeforeFinanceClose  Boolean                             @default(false)
+  mandatoryBeforeInvoice       Boolean                             @default(false)
+  mandatoryBeforeJobClose      Boolean                             @default(false)
+  media                        String                              @default("COMMON")
+  owner                        String                              @default("FORWARDER")
+  perishableCargo              Boolean                             @default(false)
+  temperatureControlled        Boolean                             @default(false)
+  transportMode                String                              @default("MULTIMODAL")
+  ttRequired                   Boolean                             @default(false)
+  workflowStage                String?
+  company                      company?                            @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "DocumentChecklistItem_companyId_fkey")
+  shipmentdocument             shipmentdocument[]
+
+  @@unique([companyId, category, name], map: "DocumentChecklistItem_companyId_category_name_key")
+  @@unique([companyId, code], map: "DocumentChecklistItem_companyId_code_key")
+  @@index([category], map: "DocumentChecklistItem_category_idx")
+  @@index([companyId], map: "DocumentChecklistItem_companyId_idx")
+  @@index([isActive], map: "DocumentChecklistItem_isActive_idx")
+  @@index([shipmentType], map: "DocumentChecklistItem_shipmentType_idx")
+  @@index([sortOrder], map: "DocumentChecklistItem_sortOrder_idx")
+}
+
+model documenttemplate {
+  id           String                         @id
+  companyId    String
+  documentType documenttemplate_documentType
+  name         String
+  isActive     Boolean                        @default(false)
+  createdById  String?
+  createdAt    DateTime                       @default(now())
+  updatedAt    DateTime
+  deletedAt    DateTime?
+  company      company                        @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "DocumentTemplate_companyId_fkey")
+  user         user?                          @relation(fields: [createdById], references: [id], map: "DocumentTemplate_createdById_fkey")
+  documenttemplateversion documenttemplateversion[]
+
+  @@index([companyId, documentType], map: "DocumentTemplate_companyId_documentType_idx")
+  @@index([deletedAt], map: "DocumentTemplate_deletedAt_idx")
+}
+
+model documenttemplateversion {
+  id               String           @id
+  templateId       String
+  versionNumber    Int
+  layoutJson       String           @db.Text
+  isCurrent        Boolean          @default(true)
+  createdById      String?
+  createdAt        DateTime         @default(now())
+  documenttemplate documenttemplate @relation(fields: [templateId], references: [id], onDelete: Cascade, map: "DocumentTemplateVersion_templateId_fkey")
+  user             user?            @relation(fields: [createdById], references: [id], map: "DocumentTemplateVersion_createdById_fkey")
+  invoice          invoice[]
+  quotation        quotation[]
+  freightdocument  freightdocument[]
+
+  @@unique([templateId, versionNumber], map: "DocumentTemplateVersion_templateId_versionNumber_key")
+  @@index([templateId, isCurrent], map: "DocumentTemplateVersion_templateId_isCurrent_idx")
+}
+
+model documentversion {
+  id                String          @id
+  freightDocumentId String
+  versionNumber     Int             @default(1)
+  content           String          @db.LongText
+  createdById       String?
+  createdAt         DateTime        @default(now())
+  remarks           String?         @db.Text
+  user              user?           @relation(fields: [createdById], references: [id], map: "DocumentVersion_createdById_fkey")
+  freightdocument   freightdocument @relation(fields: [freightDocumentId], references: [id], onDelete: Cascade, map: "DocumentVersion_freightDocumentId_fkey")
+
+  @@unique([freightDocumentId, versionNumber], map: "DocumentVersion_freightDocumentId_versionNumber_key")
+  @@index([createdById], map: "DocumentVersion_createdById_idx")
+  @@index([freightDocumentId], map: "DocumentVersion_freightDocumentId_idx")
+}
+
+model freightbooking {
+  id                  String                @id
+  companyId           String
+  shipmentJobId       String                @unique(map: "FreightBooking_shipmentJobId_key")
+  quotationId         String?
+  invoiceId           String?
+  vendorId            String
+  status              freightbooking_status @default(NOT_STARTED)
+  bookingRequestAt    DateTime?
+  sentById            String?
+  providerReference   String?
+  acknowledgedAt      DateTime?
+  confirmedAt         DateTime?
+  confirmationNumber  String?
+  forwardedToCustomer Boolean               @default(false)
+  forwardedAt         DateTime?
+  notes               String?               @db.Text
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  deletedAt           DateTime?
+  company             company               @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "FreightBooking_companyId_fkey")
+  invoice             invoice?              @relation(fields: [invoiceId], references: [id], map: "FreightBooking_invoiceId_fkey")
+  quotation           quotation?            @relation(fields: [quotationId], references: [id], map: "FreightBooking_quotationId_fkey")
+  user                user?                 @relation(fields: [sentById], references: [id], map: "FreightBooking_sentById_fkey")
+  shipmentjob         shipmentjob           @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "FreightBooking_shipmentJobId_fkey")
+  vendor              vendor                @relation(fields: [vendorId], references: [id], map: "FreightBooking_vendorId_fkey")
+
+  @@index([companyId], map: "FreightBooking_companyId_idx")
+  @@index([invoiceId], map: "FreightBooking_invoiceId_fkey")
+  @@index([quotationId], map: "FreightBooking_quotationId_fkey")
+  @@index([sentById], map: "FreightBooking_sentById_fkey")
+  @@index([status], map: "FreightBooking_status_idx")
+  @@index([vendorId], map: "FreightBooking_vendorId_idx")
+}
+
+model freightdocument {
+  id                                      String                         @id
+  companyId                               String
+  branchId                                String
+  shipmentJobId                           String
+  type                                    freightdocument_type
+  documentNo                              String
+  status                                  freightdocument_status         @default(DRAFT)
+  isClientVisible                         Boolean                        @default(false)
+  lockedAt                                DateTime?
+  lockedById                              String?
+  createdAt                               DateTime                       @default(now())
+  updatedAt                               DateTime
+  deletedAt                               DateTime?
+  handlingMode                            freightdocument_handlingMode   @default(GENERATE_IN_SYSTEM)
+  responsibility                          freightdocument_responsibility @default(FORWARDER_GENERATED)
+  visibility                              freightdocument_visibility     @default(CLIENT_SAFE)
+  expiryDate                              DateTime?
+  fileName                                String?
+  filePath                                String?
+  fileSize                                Int?
+  issueDate                               DateTime?
+  issuedBy                                String?
+  mimeType                                String?
+  originalFileName                        String?
+  receivedFrom                            String?
+  referenceNo                             String?
+  rejectedAt                              DateTime?
+  rejectedById                            String?
+  rejectionReason                         String?                        @db.Text
+  remarks                                 String?                        @db.Text
+  uploadedById                            String?
+  verifiedAt                              DateTime?
+  verifiedById                            String?
+  templateVersionId                       String?
+  documentapproval                        documentapproval[]
+  documentversion                         documentversion[]
+  company                                 company                        @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "FreightDocument_companyId_fkey")
+  branch                                  branch                         @relation(fields: [branchId], references: [id], map: "FreightDocument_branchId_fkey")
+  user_freightdocument_lockedByIdTouser   user?                          @relation("freightdocument_lockedByIdTouser", fields: [lockedById], references: [id], map: "FreightDocument_lockedById_fkey")
+  user_freightdocument_rejectedByIdTouser user?                          @relation("freightdocument_rejectedByIdTouser", fields: [rejectedById], references: [id], map: "FreightDocument_rejectedById_fkey")
+  shipmentjob                             shipmentjob                    @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "FreightDocument_shipmentJobId_fkey")
+  user_freightdocument_uploadedByIdTouser user?                          @relation("freightdocument_uploadedByIdTouser", fields: [uploadedById], references: [id], map: "FreightDocument_uploadedById_fkey")
+  user_freightdocument_verifiedByIdTouser user?                          @relation("freightdocument_verifiedByIdTouser", fields: [verifiedById], references: [id], map: "FreightDocument_verifiedById_fkey")
+  documenttemplateversion                 documenttemplateversion?      @relation(fields: [templateVersionId], references: [id], map: "FreightDocument_templateVersionId_fkey")
+
+  @@unique([companyId, type, documentNo], map: "FreightDocument_companyId_type_documentNo_key")
+  @@index([companyId], map: "FreightDocument_companyId_idx")
+  @@index([branchId], map: "FreightDocument_branchId_idx")
+  @@index([lockedById], map: "FreightDocument_lockedById_fkey")
+  @@index([rejectedById], map: "FreightDocument_rejectedById_fkey")
+  @@index([shipmentJobId], map: "FreightDocument_shipmentJobId_idx")
+  @@index([status], map: "FreightDocument_status_idx")
+  @@index([uploadedById], map: "FreightDocument_uploadedById_fkey")
+  @@index([verifiedById], map: "FreightDocument_verifiedById_fkey")
+  @@index([templateVersionId], map: "FreightDocument_templateVersionId_idx")
+}
+
+model freightdocumentsequence {
+  id              String                               @id
+  companyId       String
+  documentType    freightdocumentsequence_documentType
+  year            Int
+  prefix          String
+  currentSequence Int                                  @default(0)
+  padding         Int                                  @default(4)
+  createdAt       DateTime                             @default(now())
+  updatedAt       DateTime
+  company         company                              @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "FreightDocumentSequence_companyId_fkey")
+
+  @@unique([companyId, documentType, year], map: "FreightDocumentSequence_companyId_documentType_year_key")
+  @@index([companyId], map: "FreightDocumentSequence_companyId_idx")
+  @@index([year], map: "FreightDocumentSequence_year_idx")
+}
+
+model importjob {
+  id              String                      @id
+  companyId       String
+  actorId         String
+  entityType      importjob_entityType
+  status          importjob_status            @default(UPLOADED)
+  fileName        String
+  filePath        String
+  fileSize        Int
+  rowCount        Int?
+  columnMapping   String?                     @db.Text
+  duplicatePolicy importjob_duplicatePolicy?
+  createdCount    Int                         @default(0)
+  skippedCount    Int                         @default(0)
+  rejectedCount   Int                         @default(0)
+  rowErrors       String?                     @db.LongText
+  errorMessage    String?                     @db.Text
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime
+  completedAt     DateTime?
+  company         company                     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ImportJob_companyId_fkey")
+  user            user                        @relation(fields: [actorId], references: [id], onDelete: Cascade, map: "ImportJob_actorId_fkey")
+
+  @@index([companyId], map: "ImportJob_companyId_idx")
+  @@index([status], map: "ImportJob_status_idx")
+  @@index([actorId], map: "ImportJob_actorId_idx")
+}
+
+model invoice {
+  id                String           @id
+  companyId         String
+  branchId          String
+  invoiceNo         String
+  customerId        String
+  shipmentJobId     String?
+  quotationId       String?
+  status            invoice_status   @default(DRAFT)
+  invoiceDate       DateTime
+  dueDate           DateTime?
+  currency          invoice_currency @default(BDT)
+  exchangeRateToBDT Decimal          @default(1.0000) @db.Decimal(14, 4)
+  subtotal          Decimal          @default(0.00) @db.Decimal(14, 2)
+  discountAmount    Decimal          @default(0.00) @db.Decimal(14, 2)
+  taxAmount         Decimal          @default(0.00) @db.Decimal(14, 2)
+  totalAmount       Decimal          @default(0.00) @db.Decimal(14, 2)
+  paidAmount        Decimal          @default(0.00) @db.Decimal(14, 2)
+  dueAmount         Decimal          @default(0.00) @db.Decimal(14, 2)
+  remarks           String?          @db.Text
+  createdById       String
+  sentAt            DateTime?
+  cancelledAt       DateTime?
+  templateVersionId String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime
+  deletedAt         DateTime?
+  freightbooking    freightbooking[]
+  company           company          @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Invoice_companyId_fkey")
+  branch            branch           @relation(fields: [branchId], references: [id], map: "Invoice_branchId_fkey")
+  user              user             @relation(fields: [createdById], references: [id], map: "Invoice_createdById_fkey")
+  customer          customer         @relation(fields: [customerId], references: [id], map: "Invoice_customerId_fkey")
+  quotation         quotation?       @relation(fields: [quotationId], references: [id], map: "Invoice_quotationId_fkey")
+  shipmentjob       shipmentjob?     @relation(fields: [shipmentJobId], references: [id], map: "Invoice_shipmentJobId_fkey")
+  documenttemplateversion documenttemplateversion? @relation(fields: [templateVersionId], references: [id], map: "Invoice_templateVersionId_fkey")
+  invoiceline       invoiceline[]
+  payment           payment[]
+  task              task[]
+
+  @@unique([companyId, invoiceNo], map: "Invoice_companyId_invoiceNo_key")
+  @@index([companyId], map: "Invoice_companyId_idx")
+  @@index([branchId], map: "Invoice_branchId_idx")
+  @@index([createdAt], map: "Invoice_createdAt_idx")
+  @@index([createdById], map: "Invoice_createdById_fkey")
+  @@index([customerId], map: "Invoice_customerId_idx")
+  @@index([dueDate], map: "Invoice_dueDate_idx")
+  @@index([invoiceDate], map: "Invoice_invoiceDate_idx")
+  @@index([quotationId], map: "Invoice_quotationId_idx")
+  @@index([shipmentJobId], map: "Invoice_shipmentJobId_idx")
+  @@index([status], map: "Invoice_status_idx")
+  @@index([templateVersionId], map: "Invoice_templateVersionId_idx")
+}
+
+model invoiceline {
+  id                 String                  @id
+  companyId          String
+  invoiceId          String
+  shipmentCostItemId String?
+  description        String
+  chargeType         invoiceline_chargeType?
+  quantity           Decimal                 @default(1.000) @db.Decimal(12, 3)
+  unitPrice          Decimal                 @default(0.00) @db.Decimal(14, 2)
+  amount             Decimal                 @default(0.00) @db.Decimal(14, 2)
+  remarks            String?                 @db.Text
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime
+  deletedAt          DateTime?
+  company            company                 @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "InvoiceLine_companyId_fkey")
+  invoice            invoice                 @relation(fields: [invoiceId], references: [id], onDelete: Cascade, map: "InvoiceLine_invoiceId_fkey")
+  shipmentcostitem   shipmentcostitem?       @relation(fields: [shipmentCostItemId], references: [id], map: "InvoiceLine_shipmentCostItemId_fkey")
+
+  @@index([companyId], map: "InvoiceLine_companyId_idx")
+  @@index([invoiceId], map: "InvoiceLine_invoiceId_idx")
+  @@index([shipmentCostItemId], map: "InvoiceLine_shipmentCostItemId_idx")
+}
+
+model invoicesequence {
+  id              String   @id
+  companyId       String
+  year            Int
+  currentSequence Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  company         company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "InvoiceSequence_companyId_fkey")
+
+  @@unique([companyId, year], map: "InvoiceSequence_companyId_year_key")
+  @@index([companyId], map: "InvoiceSequence_companyId_idx")
+}
+
+model notification {
+  id                    String                 @id
+  companyId             String?
+  userId                String?
+  clientPortalAccountId String?
+  branchId              String?
+  dedupeKey             String?                @unique(map: "Notification_dedupeKey_key")
+  scope                 notification_scope
+  type                  String
+  title                 String
+  message               String                 @db.Text
+  linkUrl               String?
+  metadata              String?                @db.LongText
+  readAt                DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime
+  deletedAt             DateTime?
+  branch                branch?                @relation(fields: [branchId], references: [id], onDelete: SetNull, map: "Notification_branchId_fkey")
+  clientportalaccount   clientportalaccount?   @relation(fields: [clientPortalAccountId], references: [id], onDelete: Cascade, map: "Notification_clientPortalAccountId_fkey")
+  company               company?               @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Notification_companyId_fkey")
+  user                  user?                  @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Notification_userId_fkey")
+  notificationdelivery  notificationdelivery[]
+
+  @@index([branchId], map: "Notification_branchId_idx")
+  @@index([clientPortalAccountId], map: "Notification_clientPortalAccountId_idx")
+  @@index([companyId], map: "Notification_companyId_idx")
+  @@index([createdAt], map: "Notification_createdAt_idx")
+  @@index([deletedAt], map: "Notification_deletedAt_idx")
+  @@index([readAt], map: "Notification_readAt_idx")
+  @@index([scope], map: "Notification_scope_idx")
+  @@index([userId], map: "Notification_userId_idx")
+}
+
+model notificationdelivery {
+  id                             String                       @id
+  companyId                      String?
+  notificationId                 String?
+  templateId                     String?
+  branchId                       String?
+  dedupeKey                      String?                      @unique(map: "NotificationDelivery_dedupeKey_key")
+  scope                          notificationdelivery_scope
+  channel                        notificationdelivery_channel
+  status                         notificationdelivery_status  @default(PENDING)
+  recipientUserId                String?
+  recipientClientPortalAccountId String?
+  recipientName                  String?
+  recipientEmail                 String?
+  recipientPhone                 String?
+  subject                        String?
+  messageBody                    String                       @db.Text
+  linkUrl                        String?
+  provider                       String?
+  providerMessageId              String?
+  errorMessage                   String?                      @db.Text
+  attempts                       Int                          @default(0)
+  nextAttemptAt                  DateTime?
+  sentAt                         DateTime?
+  failedAt                       DateTime?
+  createdAt                      DateTime                     @default(now())
+  updatedAt                      DateTime
+  deletedAt                      DateTime?
+  communicationAccountId         String?
+  branch                         branch?                      @relation(fields: [branchId], references: [id], onDelete: SetNull, map: "NotificationDelivery_branchId_fkey")
+  communicationaccount           communicationaccount?        @relation(fields: [communicationAccountId], references: [id], map: "NotificationDelivery_communicationAccountId_fkey")
+  company                        company?                     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "NotificationDelivery_companyId_fkey")
+  notification                   notification?                @relation(fields: [notificationId], references: [id], map: "NotificationDelivery_notificationId_fkey")
+  clientportalaccount            clientportalaccount?         @relation(fields: [recipientClientPortalAccountId], references: [id], map: "NotificationDelivery_recipientClientPortalAccountId_fkey")
+  user                           user?                        @relation(fields: [recipientUserId], references: [id], map: "NotificationDelivery_recipientUserId_fkey")
+  notificationtemplate           notificationtemplate?        @relation(fields: [templateId], references: [id], map: "NotificationDelivery_templateId_fkey")
+
+  @@index([branchId], map: "NotificationDelivery_branchId_idx")
+  @@index([channel], map: "NotificationDelivery_channel_idx")
+  @@index([communicationAccountId], map: "NotificationDelivery_communicationAccountId_idx")
+  @@index([companyId], map: "NotificationDelivery_companyId_idx")
+  @@index([createdAt], map: "NotificationDelivery_createdAt_idx")
+  @@index([deletedAt], map: "NotificationDelivery_deletedAt_idx")
+  @@index([notificationId], map: "NotificationDelivery_notificationId_idx")
+  @@index([recipientClientPortalAccountId], map: "NotificationDelivery_recipientClientPortalAccountId_idx")
+  @@index([recipientUserId], map: "NotificationDelivery_recipientUserId_idx")
+  @@index([scope], map: "NotificationDelivery_scope_idx")
+  @@index([status], map: "NotificationDelivery_status_idx")
+  @@index([templateId], map: "NotificationDelivery_templateId_idx")
+}
+
+model notificationtemplate {
+  id                   String                             @id
+  companyId            String?
+  key                  String
+  name                 String
+  description          String?                            @db.Text
+  channel              notificationtemplate_channel
+  audienceScope        notificationtemplate_audienceScope
+  subject              String?
+  body                 String                             @db.Text
+  isSystem             Boolean                            @default(false)
+  isActive             Boolean                            @default(true)
+  autoSendApproved     Boolean                            @default(false)
+  createdAt            DateTime                           @default(now())
+  updatedAt            DateTime
+  deletedAt            DateTime?
+  notificationdelivery notificationdelivery[]
+  company              company?                           @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "NotificationTemplate_companyId_fkey")
+
+  @@unique([companyId, key, channel], map: "NotificationTemplate_companyId_key_channel_key")
+  @@index([audienceScope], map: "NotificationTemplate_audienceScope_idx")
+  @@index([channel], map: "NotificationTemplate_channel_idx")
+  @@index([companyId], map: "NotificationTemplate_companyId_idx")
+  @@index([deletedAt], map: "NotificationTemplate_deletedAt_idx")
+  @@index([isActive], map: "NotificationTemplate_isActive_idx")
+  @@index([key], map: "NotificationTemplate_key_idx")
+}
+
+model notificationoptout {
+  id           String                        @id
+  companyId    String
+  recipientKey String
+  channel      notificationdelivery_channel
+  createdAt    DateTime                      @default(now())
+  company      company                       @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "NotificationOptOut_companyId_fkey")
+
+  @@unique([companyId, recipientKey, channel], map: "NotificationOptOut_companyId_recipientKey_channel_key")
+  @@index([companyId], map: "NotificationOptOut_companyId_idx")
+}
+
+model passwordresettoken {
+  id        String    @id
+  userId    String
+  tokenHash String    @unique(map: "PasswordResetToken_tokenHash_key")
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "PasswordResetToken_userId_fkey")
+
+  @@index([expiresAt], map: "PasswordResetToken_expiresAt_idx")
+  @@index([usedAt], map: "PasswordResetToken_usedAt_idx")
+  @@index([userId], map: "PasswordResetToken_userId_idx")
+}
+
+model payment {
+  id                String                @id
+  companyId         String
+  branchId          String
+  paymentNo         String
+  direction         payment_direction
+  status            payment_status        @default(CLEARED)
+  customerId        String?
+  vendorId          String?
+  invoiceId         String?
+  vendorBillId      String?
+  shipmentJobId     String?
+  paymentDate       DateTime
+  paymentMethod     payment_paymentMethod
+  referenceNo       String?
+  currency          payment_currency      @default(BDT)
+  exchangeRateToBDT Decimal               @default(1.0000) @db.Decimal(14, 4)
+  amount            Decimal               @db.Decimal(14, 2)
+  amountInBDT       Decimal               @db.Decimal(14, 2)
+  remarks           String?               @db.Text
+  createdById       String
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime
+  deletedAt         DateTime?
+  company           company               @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Payment_companyId_fkey")
+  branch            branch                @relation(fields: [branchId], references: [id], map: "Payment_branchId_fkey")
+  user              user                  @relation(fields: [createdById], references: [id], map: "Payment_createdById_fkey")
+  customer          customer?             @relation(fields: [customerId], references: [id], map: "Payment_customerId_fkey")
+  invoice           invoice?              @relation(fields: [invoiceId], references: [id], map: "Payment_invoiceId_fkey")
+  shipmentjob       shipmentjob?          @relation(fields: [shipmentJobId], references: [id], map: "Payment_shipmentJobId_fkey")
+  vendorbill        vendorbill?           @relation(fields: [vendorBillId], references: [id], map: "Payment_vendorBillId_fkey")
+  vendor            vendor?               @relation(fields: [vendorId], references: [id], map: "Payment_vendorId_fkey")
+  approvalrequest   approvalrequest[]
+
+  @@unique([companyId, paymentNo], map: "Payment_companyId_paymentNo_key")
+  @@index([companyId], map: "Payment_companyId_idx")
+  @@index([branchId], map: "Payment_branchId_idx")
+  @@index([createdAt], map: "Payment_createdAt_idx")
+  @@index([createdById], map: "Payment_createdById_fkey")
+  @@index([customerId], map: "Payment_customerId_idx")
+  @@index([direction], map: "Payment_direction_idx")
+  @@index([invoiceId], map: "Payment_invoiceId_idx")
+  @@index([paymentDate], map: "Payment_paymentDate_idx")
+  @@index([shipmentJobId], map: "Payment_shipmentJobId_idx")
+  @@index([status], map: "Payment_status_idx")
+  @@index([vendorBillId], map: "Payment_vendorBillId_idx")
+  @@index([vendorId], map: "Payment_vendorId_idx")
+}
+
+model paymentsequence {
+  id              String   @id
+  companyId       String
+  year            Int
+  currentSequence Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  company         company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "PaymentSequence_companyId_fkey")
+
+  @@unique([companyId, year], map: "PaymentSequence_companyId_year_key")
+  @@index([companyId], map: "PaymentSequence_companyId_idx")
+}
+
+model permission {
+  id             String           @id
+  key            String           @unique(map: "Permission_key_key")
+  name           String
+  description    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  rolepermission rolepermission[]
+}
+
+model prealert {
+  id                        String          @id
+  companyId                 String
+  shipmentJobId             String          @unique(map: "PreAlert_shipmentJobId_key")
+  destinationAgentId        String?
+  status                    prealert_status @default(DRAFT)
+  generatedAt               DateTime        @default(now())
+  sentAt                    DateTime?
+  acknowledgedAt            DateTime?
+  invoiceAvailable          Boolean         @default(false)
+  packingListAvailable      Boolean         @default(false)
+  attachedDocumentChecklist String?         @db.Text
+  chargesInstruction        String?         @db.Text
+  remarks                   String?         @db.Text
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime
+  company                   company         @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "PreAlert_companyId_fkey")
+  vendor                    vendor?         @relation(fields: [destinationAgentId], references: [id], map: "PreAlert_destinationAgentId_fkey")
+  shipmentjob               shipmentjob     @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "PreAlert_shipmentJobId_fkey")
+
+  @@index([companyId], map: "PreAlert_companyId_idx")
+  @@index([destinationAgentId], map: "PreAlert_destinationAgentId_idx")
+  @@index([status], map: "PreAlert_status_idx")
+}
+
+model quotation {
+  id                                                        String                   @id
+  companyId                                                 String
+  branchId                                                  String
+  quoteNo                                                   String
+  customerId                                                String
+  shipmentJobId                                             String?
+  shipmentType                                              quotation_shipmentType?
+  transportMode                                             quotation_transportMode?
+  loadType                                                  quotation_loadType?
+  tradeTerm                                                 quotation_tradeTerm?
+  originCountry                                             String?
+  originPort                                                String?
+  destinationCountry                                        String?
+  destinationPort                                           String?
+  cargoDescription                                          String?                  @db.Text
+  packageCount                                              Int?
+  grossWeight                                               Decimal?                 @db.Decimal(12, 3)
+  chargeableWeight                                          Decimal?                 @db.Decimal(12, 3)
+  cbm                                                       Decimal?                 @db.Decimal(12, 3)
+  status                                                    quotation_status         @default(DRAFT)
+  validUntil                                                DateTime?
+  remarks                                                   String?                  @db.Text
+  createdById                                               String
+  approvedById                                              String?
+  approvedAt                                                DateTime?
+  convertedShipmentJobId                                    String?
+  totalBuyAmount                                            Decimal                  @default(0.00) @db.Decimal(14, 2)
+  totalSellAmount                                           Decimal                  @default(0.00) @db.Decimal(14, 2)
+  grossProfit                                               Decimal                  @default(0.00) @db.Decimal(14, 2)
+  profitMarginPercent                                       Decimal                  @default(0.00) @db.Decimal(8, 2)
+  createdAt                                                 DateTime                 @default(now())
+  updatedAt                                                 DateTime
+  deletedAt                                                 DateTime?
+  shipmentRequestId                                         String?
+  selectedCarrierProposalId                                 String?
+  templateVersionId                                         String?
+  carrierquery                                              carrierquery[]
+  freightbooking                                            freightbooking[]
+  invoice                                                   invoice[]
+  user_quotation_approvedByIdTouser                         user?                    @relation("quotation_approvedByIdTouser", fields: [approvedById], references: [id], map: "Quotation_approvedById_fkey")
+  company                                                   company                  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Quotation_companyId_fkey")
+  branch                                                    branch                   @relation(fields: [branchId], references: [id], map: "Quotation_branchId_fkey")
+  shipmentjob_quotation_convertedShipmentJobIdToshipmentjob shipmentjob?             @relation("quotation_convertedShipmentJobIdToshipmentjob", fields: [convertedShipmentJobId], references: [id], map: "Quotation_convertedShipmentJobId_fkey")
+  user_quotation_createdByIdTouser                          user                     @relation("quotation_createdByIdTouser", fields: [createdById], references: [id], map: "Quotation_createdById_fkey")
+  customer                                                  customer                 @relation(fields: [customerId], references: [id], map: "Quotation_customerId_fkey")
+  carrierproposal                                           carrierproposal?         @relation(fields: [selectedCarrierProposalId], references: [id], map: "Quotation_selectedCarrierProposalId_fkey")
+  shipmentjob_quotation_shipmentJobIdToshipmentjob          shipmentjob?             @relation("quotation_shipmentJobIdToshipmentjob", fields: [shipmentJobId], references: [id], map: "Quotation_shipmentJobId_fkey")
+  shipmentrequest                                           shipmentrequest?         @relation(fields: [shipmentRequestId], references: [id], map: "Quotation_shipmentRequestId_fkey")
+  documenttemplateversion                                   documenttemplateversion? @relation(fields: [templateVersionId], references: [id], map: "Quotation_templateVersionId_fkey")
+  quotationcharge                                           quotationcharge[]
+  shipmentcostitem                                          shipmentcostitem[]
+  task                                                      task[]
+
+  @@unique([companyId, quoteNo], map: "Quotation_companyId_quoteNo_key")
+  @@index([approvedById], map: "Quotation_approvedById_fkey")
+  @@index([companyId], map: "Quotation_companyId_idx")
+  @@index([branchId], map: "Quotation_branchId_idx")
+  @@index([convertedShipmentJobId], map: "Quotation_convertedShipmentJobId_fkey")
+  @@index([createdAt], map: "Quotation_createdAt_idx")
+  @@index([createdById], map: "Quotation_createdById_fkey")
+  @@index([customerId], map: "Quotation_customerId_idx")
+  @@index([selectedCarrierProposalId], map: "Quotation_selectedCarrierProposalId_idx")
+  @@index([shipmentJobId], map: "Quotation_shipmentJobId_idx")
+  @@index([shipmentRequestId], map: "Quotation_shipmentRequestId_idx")
+  @@index([status], map: "Quotation_status_idx")
+  @@index([templateVersionId], map: "Quotation_templateVersionId_idx")
+  @@index([validUntil], map: "Quotation_validUntil_idx")
+}
+
+model quotationcharge {
+  id                String                      @id
+  companyId         String
+  quotationId       String
+  chargeName        String
+  chargeType        quotationcharge_chargeType
+  chargeBasis       quotationcharge_chargeBasis
+  currency          quotationcharge_currency
+  quantity          Decimal                     @default(1.000) @db.Decimal(12, 3)
+  buyRate           Decimal                     @default(0.00) @db.Decimal(14, 2)
+  sellRate          Decimal                     @default(0.00) @db.Decimal(14, 2)
+  exchangeRateToBDT Decimal                     @default(1.0000) @db.Decimal(14, 4)
+  buyAmount         Decimal                     @default(0.00) @db.Decimal(14, 2)
+  sellAmount        Decimal                     @default(0.00) @db.Decimal(14, 2)
+  profitAmount      Decimal                     @default(0.00) @db.Decimal(14, 2)
+  remarks           String?                     @db.Text
+  vendorId          String?
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime
+  deletedAt         DateTime?
+  company           company                     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "QuotationCharge_companyId_fkey")
+  quotation         quotation                   @relation(fields: [quotationId], references: [id], onDelete: Cascade, map: "QuotationCharge_quotationId_fkey")
+  vendor            vendor?                     @relation(fields: [vendorId], references: [id], map: "QuotationCharge_vendorId_fkey")
+
+  @@index([chargeType], map: "QuotationCharge_chargeType_idx")
+  @@index([companyId], map: "QuotationCharge_companyId_idx")
+  @@index([createdAt], map: "QuotationCharge_createdAt_idx")
+  @@index([quotationId], map: "QuotationCharge_quotationId_idx")
+  @@index([vendorId], map: "QuotationCharge_vendorId_idx")
+}
+
+model quotationsequence {
+  id              String   @id
+  companyId       String
+  year            Int
+  currentSequence Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  company         company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "QuotationSequence_companyId_fkey")
+
+  @@unique([companyId, year], map: "QuotationSequence_companyId_year_key")
+  @@index([companyId], map: "QuotationSequence_companyId_idx")
+  @@index([year], map: "QuotationSequence_year_idx")
+}
+
+model role {
+  id             String           @id
+  companyId      String?
+  code           role_code
+  name           String
+  description    String?
+  isSystem       Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  company        company?         @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Role_companyId_fkey")
+  rolepermission rolepermission[]
+  userrole       userrole[]
+
+  @@unique([companyId, code], map: "Role_companyId_code_key")
+  @@index([code], map: "Role_code_idx")
+  @@index([companyId], map: "Role_companyId_idx")
+}
+
+model rolepermission {
+  id           String     @id
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  permission   permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, map: "RolePermission_permissionId_fkey")
+  role         role       @relation(fields: [roleId], references: [id], onDelete: Cascade, map: "RolePermission_roleId_fkey")
+
+  @@unique([roleId, permissionId], map: "RolePermission_roleId_permissionId_key")
+  @@index([permissionId], map: "RolePermission_permissionId_idx")
+  @@index([roleId], map: "RolePermission_roleId_idx")
+}
+
+model savedview {
+  id            String    @id
+  companyId     String
+  userId        String
+  pageKey       String
+  name          String
+  filterVersion Int       @default(1)
+  filterJson    String    @db.Text
+  branchScope   String?   @db.Text
+  isDefault     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  deletedAt     DateTime?
+  company       company   @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "SavedView_companyId_fkey")
+  user          user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "SavedView_userId_fkey")
+
+  @@unique([companyId, userId, pageKey, name], map: "SavedView_companyId_userId_pageKey_name_key")
+  @@index([companyId], map: "SavedView_companyId_idx")
+  @@index([userId, pageKey], map: "SavedView_userId_pageKey_idx")
+  @@index([deletedAt], map: "SavedView_deletedAt_idx")
+}
+
+model session {
+  id           String   @id
+  sessionToken String   @unique(map: "Session_sessionToken_key")
+  userId       String
+  expires      DateTime
+  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Session_userId_fkey")
+
+  @@index([userId], map: "Session_userId_idx")
+}
+
+model shipmentcostitem {
+  id                String                       @id
+  companyId         String
+  shipmentJobId     String
+  chargeName        String
+  chargeType        shipmentcostitem_chargeType
+  chargeBasis       shipmentcostitem_chargeBasis
+  currency          shipmentcostitem_currency
+  quantity          Decimal                      @default(1.000) @db.Decimal(12, 3)
+  buyRate           Decimal                      @default(0.00) @db.Decimal(14, 2)
+  sellRate          Decimal                      @default(0.00) @db.Decimal(14, 2)
+  exchangeRateToBDT Decimal                      @default(1.0000) @db.Decimal(14, 4)
+  buyAmount         Decimal                      @default(0.00) @db.Decimal(14, 2)
+  sellAmount        Decimal                      @default(0.00) @db.Decimal(14, 2)
+  profitAmount      Decimal                      @default(0.00) @db.Decimal(14, 2)
+  vendorId          String?
+  customerId        String?
+  sourceQuotationId String?
+  remarks           String?                      @db.Text
+  createdById       String
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime
+  deletedAt         DateTime?
+  invoiceline       invoiceline[]
+  company           company                      @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShipmentCostItem_companyId_fkey")
+  user              user                         @relation(fields: [createdById], references: [id], map: "ShipmentCostItem_createdById_fkey")
+  customer          customer?                    @relation(fields: [customerId], references: [id], map: "ShipmentCostItem_customerId_fkey")
+  shipmentjob       shipmentjob                  @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "ShipmentCostItem_shipmentJobId_fkey")
+  quotation         quotation?                   @relation(fields: [sourceQuotationId], references: [id], map: "ShipmentCostItem_sourceQuotationId_fkey")
+  vendor            vendor?                      @relation(fields: [vendorId], references: [id], map: "ShipmentCostItem_vendorId_fkey")
+  vendorbillline    vendorbillline[]
+
+  @@index([chargeType], map: "ShipmentCostItem_chargeType_idx")
+  @@index([companyId], map: "ShipmentCostItem_companyId_idx")
+  @@index([createdAt], map: "ShipmentCostItem_createdAt_idx")
+  @@index([createdById], map: "ShipmentCostItem_createdById_fkey")
+  @@index([customerId], map: "ShipmentCostItem_customerId_idx")
+  @@index([shipmentJobId], map: "ShipmentCostItem_shipmentJobId_idx")
+  @@index([sourceQuotationId], map: "ShipmentCostItem_sourceQuotationId_fkey")
+  @@index([vendorId], map: "ShipmentCostItem_vendorId_idx")
+}
+
+model shipmentdocument {
+  id                                       String                  @id
+  companyId                                String
+  branchId                                 String
+  shipmentJobId                            String
+  checklistItemId                          String?
+  documentName                             String
+  documentType                             String
+  status                                   shipmentdocument_status @default(PENDING)
+  fileName                                 String?
+  originalFileName                         String?
+  filePath                                 String?
+  mimeType                                 String?
+  fileSize                                 Int?
+  version                                  Int                     @default(1)
+  remarks                                  String?                 @db.Text
+  uploadedById                             String?
+  verifiedById                             String?
+  rejectedById                             String?
+  uploadedAt                               DateTime?
+  verifiedAt                               DateTime?
+  rejectedAt                               DateTime?
+  createdAt                                DateTime                @default(now())
+  updatedAt                                DateTime
+  deletedAt                                DateTime?
+  documentchecklistitem                    documentchecklistitem?  @relation(fields: [checklistItemId], references: [id], map: "ShipmentDocument_checklistItemId_fkey")
+  company                                  company                 @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShipmentDocument_companyId_fkey")
+  branch                                   branch                  @relation(fields: [branchId], references: [id], map: "ShipmentDocument_branchId_fkey")
+  user_shipmentdocument_rejectedByIdTouser user?                   @relation("shipmentdocument_rejectedByIdTouser", fields: [rejectedById], references: [id], map: "ShipmentDocument_rejectedById_fkey")
+  shipmentjob                              shipmentjob             @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "ShipmentDocument_shipmentJobId_fkey")
+  user_shipmentdocument_uploadedByIdTouser user?                   @relation("shipmentdocument_uploadedByIdTouser", fields: [uploadedById], references: [id], map: "ShipmentDocument_uploadedById_fkey")
+  user_shipmentdocument_verifiedByIdTouser user?                   @relation("shipmentdocument_verifiedByIdTouser", fields: [verifiedById], references: [id], map: "ShipmentDocument_verifiedById_fkey")
+
+  @@index([checklistItemId], map: "ShipmentDocument_checklistItemId_idx")
+  @@index([companyId], map: "ShipmentDocument_companyId_idx")
+  @@index([branchId], map: "ShipmentDocument_branchId_idx")
+  @@index([createdAt], map: "ShipmentDocument_createdAt_idx")
+  @@index([rejectedById], map: "ShipmentDocument_rejectedById_fkey")
+  @@index([shipmentJobId], map: "ShipmentDocument_shipmentJobId_idx")
+  @@index([status], map: "ShipmentDocument_status_idx")
+  @@index([uploadedById], map: "ShipmentDocument_uploadedById_idx")
+  @@index([verifiedById], map: "ShipmentDocument_verifiedById_idx")
+}
+
+model shipmentjob {
+  id                                                      String                         @id
+  companyId                                               String
+  branchId                                                String
+  jobNo                                                   String
+  customerId                                              String
+  shipmentType                                            shipmentjob_shipmentType
+  transportMode                                           shipmentjob_transportMode
+  loadType                                                shipmentjob_loadType
+  tradeTerm                                               shipmentjob_tradeTerm?
+  originCountry                                           String
+  originPort                                              String?
+  destinationCountry                                      String
+  destinationPort                                         String?
+  placeOfReceipt                                          String?
+  placeOfDelivery                                         String?
+  shipperName                                             String?
+  consigneeName                                           String?
+  notifyParty                                             String?
+  carrierName                                             String?
+  shippingLineOrAirline                                   String?
+  vesselName                                              String?
+  voyageNo                                                String?
+  flightNo                                                String?
+  mblNo                                                   String?
+  hblNo                                                   String?
+  mawbNo                                                  String?
+  hawbNo                                                  String?
+  bookingNo                                               String?
+  blOrAwbDate                                             DateTime?
+  etd                                                     DateTime?
+  eta                                                     DateTime?
+  actualDeparture                                         DateTime?
+  actualArrival                                           DateTime?
+  currentStatus                                           String?
+  cargoDescription                                        String                         @db.Text
+  hsCode                                                  String?
+  packageCount                                            Int?
+  packageType                                             String?
+  grossWeight                                             Decimal?                       @db.Decimal(12, 3)
+  chargeableWeight                                        Decimal?                       @db.Decimal(12, 3)
+  cbm                                                     Decimal?                       @db.Decimal(12, 3)
+  assignedToId                                            String
+  createdById                                             String
+  closedAt                                                DateTime?
+  createdAt                                               DateTime                       @default(now())
+  updatedAt                                               DateTime
+  deletedAt                                               DateTime?
+  grossProfit                                             Decimal                        @default(0.00) @db.Decimal(14, 2)
+  profitMarginPercent                                     Decimal                        @default(0.00) @db.Decimal(8, 2)
+  totalBuyAmount                                          Decimal                        @default(0.00) @db.Decimal(14, 2)
+  totalSellAmount                                         Decimal                        @default(0.00) @db.Decimal(14, 2)
+  deliveredAt                                             DateTime?
+  deliveryAddress                                         String?                        @db.Text
+  pickupAddress                                           String?                        @db.Text
+  proofOfDeliveryAt                                       DateTime?
+  serviceScope                                            shipmentjob_serviceScope       @default(PORT_TO_PORT)
+  netWeight                                               Decimal?                       @db.Decimal(12, 3)
+  blockedStageCount                                       Int                            @default(0)
+  commercialStatus                                        String?
+  currentStageCode                                        String?
+  documentStatus                                          String?
+  financialStatus                                         String?
+  missingRequirementList                                  String?                        @db.Text
+  operationsStatus                                        String?
+  workflowProgressPercent                                 Int                            @default(0)
+  financeCloseStatus                                      shipmentjob_financeCloseStatus @default(OPEN)
+  financeCloseReadyAt                                     DateTime?
+  financeCloseReadyById                                   String?
+  financeLockedAt                                         DateTime?
+  financeLockedById                                       String?
+  finalTotalSellAmount                                    Decimal                        @default(0.00) @db.Decimal(14, 2)
+  finalTotalBuyAmount                                     Decimal                        @default(0.00) @db.Decimal(14, 2)
+  finalGrossProfit                                        Decimal                        @default(0.00) @db.Decimal(14, 2)
+  finalProfitMarginPercent                                Decimal                        @default(0.00) @db.Decimal(8, 2)
+  financeCloseNotes                                       String?                        @db.Text
+  allowUnpaidReceivableClose                              Boolean                        @default(false)
+  vendorPayablesNotApplicable                             Boolean                        @default(false)
+  isHazardous                                             Boolean                        @default(false)
+  isPerishable                                            Boolean                        @default(false)
+  isTemperatureControlled                                 Boolean                        @default(false)
+  lcRequired                                              Boolean                        @default(false)
+  ttRequired                                              Boolean                        @default(false)
+  consigneeAddress                                        String?                        @db.Text
+  consigneeBin                                            String?
+  notifyPartyAddress                                      String?                        @db.Text
+  notifyPartyBin                                          String?
+  notifyPartyName                                         String?
+  shipperAddress                                          String?                        @db.Text
+  marksAndNumbers                                         String?                        @db.Text
+  billoflading                                            billoflading?
+  cargoreleasechecklist                                   cargoreleasechecklist?
+  carrierquery                                            carrierquery[]
+  container                                               container[]
+  freightbooking                                          freightbooking?
+  freightdocument                                         freightdocument[]
+  invoice                                                 invoice[]
+  payment                                                 payment[]
+  prealert                                                prealert?
+  quotation_quotation_convertedShipmentJobIdToshipmentjob quotation[]                    @relation("quotation_convertedShipmentJobIdToshipmentjob")
+  quotation_quotation_shipmentJobIdToshipmentjob          quotation[]                    @relation("quotation_shipmentJobIdToshipmentjob")
+  shipmentcostitem                                        shipmentcostitem[]
+  shipmentdocument                                        shipmentdocument[]
+  user_shipmentjob_assignedToIdTouser                     user                           @relation("shipmentjob_assignedToIdTouser", fields: [assignedToId], references: [id], map: "ShipmentJob_assignedToId_fkey")
+  company                                                 company                        @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShipmentJob_companyId_fkey")
+  branch                                                  branch                         @relation(fields: [branchId], references: [id], map: "ShipmentJob_branchId_fkey")
+  user_shipmentjob_createdByIdTouser                      user                           @relation("shipmentjob_createdByIdTouser", fields: [createdById], references: [id], map: "ShipmentJob_createdById_fkey")
+  customer                                                customer                       @relation(fields: [customerId], references: [id], map: "ShipmentJob_customerId_fkey")
+  shipmentrequest                                         shipmentrequest?
+  shipmentstatusevent                                     shipmentstatusevent[]
+  shipmentworkflow                                        shipmentworkflow?
+  shipmentworkflowstep                                    shipmentworkflowstep[]
+  shippinginstruction                                     shippinginstruction?
+  stuffingplan                                            stuffingplan?
+  task                                                    task[]
+  vendorbill                                              vendorbill[]
+
+  @@unique([companyId, id], map: "ShipmentJob_companyId_id_key")
+  @@unique([companyId, jobNo], map: "ShipmentJob_companyId_jobNo_key")
+  @@index([assignedToId], map: "ShipmentJob_assignedToId_idx")
+  @@index([companyId], map: "ShipmentJob_companyId_idx")
+  @@index([branchId], map: "ShipmentJob_branchId_idx")
+  @@index([createdAt], map: "ShipmentJob_createdAt_idx")
+  @@index([createdById], map: "ShipmentJob_createdById_fkey")
+  @@index([currentStatus], map: "ShipmentJob_currentStatus_idx")
+  @@index([customerId], map: "ShipmentJob_customerId_idx")
+  @@index([eta], map: "ShipmentJob_eta_idx")
+  @@index([etd], map: "ShipmentJob_etd_idx")
+  @@index([financeCloseStatus], map: "ShipmentJob_financeCloseStatus_idx")
+  @@index([jobNo], map: "ShipmentJob_jobNo_idx")
+  @@index([shipmentType], map: "ShipmentJob_shipmentType_idx")
+  @@index([transportMode], map: "ShipmentJob_transportMode_idx")
+}
+
+model shipmentjobsequence {
+  id              String   @id
+  companyId       String
+  year            Int
+  currentSequence Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  company         company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShipmentJobSequence_companyId_fkey")
+
+  @@unique([companyId, year], map: "ShipmentJobSequence_companyId_year_key")
+  @@index([companyId], map: "ShipmentJobSequence_companyId_idx")
+  @@index([year], map: "ShipmentJobSequence_year_idx")
+}
+
+model shipmentrequest {
+  id                                     String                        @id
+  companyId                              String
+  branchId                               String
+  customerId                             String
+  clientPortalAccountId                  String?
+  requestNo                              String
+  status                                 shipmentrequest_status        @default(SUBMITTED)
+  shipmentType                           shipmentrequest_shipmentType
+  transportMode                          shipmentrequest_transportMode
+  serviceScope                           shipmentrequest_serviceScope
+  loadType                               shipmentrequest_loadType?
+  tradeType                              String?
+  originCountry                          String
+  originPort                             String?
+  originAddress                          String?                       @db.Text
+  destinationCountry                     String
+  destinationPort                        String?
+  destinationAddress                     String?                       @db.Text
+  pickupAddress                          String?                       @db.Text
+  deliveryAddress                        String?                       @db.Text
+  cargoDescription                       String                        @db.Text
+  commodity                              String?
+  hsCode                                 String?
+  packageType                            String?
+  packageCount                           Int?
+  grossWeight                            Decimal?                      @db.Decimal(12, 3)
+  chargeableWeight                       Decimal?                      @db.Decimal(12, 3)
+  cbm                                    Decimal?                      @db.Decimal(12, 3)
+  incoterm                               shipmentrequest_incoterm?
+  readyDate                              DateTime?
+  expectedShipmentDate                   DateTime?
+  expectedDeliveryDate                   DateTime?
+  customerReference                      String?
+  customerNotes                          String?                       @db.Text
+  internalNotes                          String?                       @db.Text
+  revisionMessage                        String?                       @db.Text
+  rejectionReason                        String?                       @db.Text
+  submittedAt                            DateTime?
+  quotedAt                               DateTime?
+  acceptedAt                             DateTime?
+  rejectedAt                             DateTime?
+  convertedAt                            DateTime?
+  convertedShipmentJobId                 String?                       @unique(map: "ShipmentRequest_convertedShipmentJobId_key")
+  createdById                            String?
+  updatedById                            String?
+  createdAt                              DateTime                      @default(now())
+  updatedAt                              DateTime
+  deletedAt                              DateTime?
+  containerRequirement                   String?
+  isDangerousGoods                       Boolean                       @default(false)
+  isFragile                              Boolean                       @default(false)
+  isReefer                               Boolean                       @default(false)
+  netWeight                              Decimal?                      @db.Decimal(12, 3)
+  requestedEta                           DateTime?
+  requestedEtd                           DateTime?
+  specialHandlingNote                    String?                       @db.Text
+  source                                 String                        @default("CLIENT_PORTAL")
+  consigneeAddress                       String?                       @db.Text
+  consigneeBin                           String?
+  consigneeName                          String?
+  notifyPartyAddress                     String?                       @db.Text
+  notifyPartyBin                         String?
+  notifyPartyName                        String?
+  shipperAddress                         String?                       @db.Text
+  shipperName                            String?
+  carrierquery                           carrierquery[]
+  quotation                              quotation[]
+  clientportalaccount                    clientportalaccount?          @relation(fields: [clientPortalAccountId], references: [id], map: "ShipmentRequest_clientPortalAccountId_fkey")
+  company                                company                       @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShipmentRequest_companyId_fkey")
+  branch                                 branch                        @relation(fields: [branchId], references: [id], map: "ShipmentRequest_branchId_fkey")
+  shipmentjob                            shipmentjob?                  @relation(fields: [convertedShipmentJobId], references: [id], map: "ShipmentRequest_convertedShipmentJobId_fkey")
+  user_shipmentrequest_createdByIdTouser user?                         @relation("shipmentrequest_createdByIdTouser", fields: [createdById], references: [id], map: "ShipmentRequest_createdById_fkey")
+  customer                               customer                      @relation(fields: [customerId], references: [id], map: "ShipmentRequest_customerId_fkey")
+  user_shipmentrequest_updatedByIdTouser user?                         @relation("shipmentrequest_updatedByIdTouser", fields: [updatedById], references: [id], map: "ShipmentRequest_updatedById_fkey")
+  task                                   task[]
+
+  @@unique([companyId, id], map: "ShipmentRequest_companyId_id_key")
+  @@unique([companyId, requestNo], map: "ShipmentRequest_companyId_requestNo_key")
+  @@index([clientPortalAccountId], map: "ShipmentRequest_clientPortalAccountId_idx")
+  @@index([companyId], map: "ShipmentRequest_companyId_idx")
+  @@index([branchId], map: "ShipmentRequest_branchId_idx")
+  @@index([createdAt], map: "ShipmentRequest_createdAt_idx")
+  @@index([createdById], map: "ShipmentRequest_createdById_fkey")
+  @@index([customerId], map: "ShipmentRequest_customerId_idx")
+  @@index([serviceScope], map: "ShipmentRequest_serviceScope_idx")
+  @@index([status], map: "ShipmentRequest_status_idx")
+  @@index([transportMode], map: "ShipmentRequest_transportMode_idx")
+  @@index([updatedById], map: "ShipmentRequest_updatedById_fkey")
+}
+
+model shipmentrequestsequence {
+  id              String   @id
+  companyId       String
+  year            Int
+  currentSequence Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  company         company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShipmentRequestSequence_companyId_fkey")
+
+  @@unique([companyId, year], map: "ShipmentRequestSequence_companyId_year_key")
+  @@index([companyId], map: "ShipmentRequestSequence_companyId_idx")
+  @@index([year], map: "ShipmentRequestSequence_year_idx")
+}
+
+model shipmentstatusevent {
+  id            String      @id
+  companyId     String
+  shipmentJobId String
+  status        String
+  remarks       String?     @db.Text
+  updatedById   String
+  createdAt     DateTime    @default(now())
+  company       company     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShipmentStatusEvent_companyId_fkey")
+  shipmentjob   shipmentjob @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "ShipmentStatusEvent_shipmentJobId_fkey")
+  user          user        @relation(fields: [updatedById], references: [id], map: "ShipmentStatusEvent_updatedById_fkey")
+
+  @@index([companyId], map: "ShipmentStatusEvent_companyId_idx")
+  @@index([createdAt], map: "ShipmentStatusEvent_createdAt_idx")
+  @@index([shipmentJobId], map: "ShipmentStatusEvent_shipmentJobId_idx")
+  @@index([status], map: "ShipmentStatusEvent_status_idx")
+  @@index([updatedById], map: "ShipmentStatusEvent_updatedById_idx")
+}
+
+model shipmentworkflow {
+  id                      String                    @id
+  shipmentJobId           String                    @unique(map: "ShipmentWorkflow_shipmentJobId_key")
+  workflowTemplateId      String
+  progressPercent         Int                       @default(0)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  shipmentjob             shipmentjob               @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "ShipmentWorkflow_shipmentJobId_fkey")
+  workflowtemplate        workflowtemplate          @relation(fields: [workflowTemplateId], references: [id], map: "ShipmentWorkflow_workflowTemplateId_fkey")
+  shipmentworkflowstage   shipmentworkflowstage[]
+  workflowoverride        workflowoverride[]
+  workflowstageaudit      workflowstageaudit[]
+  workflowstagetransition workflowstagetransition[]
+
+  @@index([shipmentJobId], map: "ShipmentWorkflow_shipmentJobId_idx")
+  @@index([workflowTemplateId], map: "ShipmentWorkflow_workflowTemplateId_idx")
+}
+
+model shipmentworkflowstage {
+  id                       String                       @id
+  shipmentWorkflowId       String
+  stageCode                String
+  stageName                String
+  sortOrder                Int
+  status                   shipmentworkflowstage_status @default(NOT_STARTED)
+  blockedReason            String?                      @db.Text
+  completedById            String?
+  completedAt              DateTime?
+  createdAt                DateTime                     @default(now())
+  updatedAt                DateTime
+  user                     user?                        @relation(fields: [completedById], references: [id], map: "ShipmentWorkflowStage_completedById_fkey")
+  shipmentworkflow         shipmentworkflow             @relation(fields: [shipmentWorkflowId], references: [id], onDelete: Cascade, map: "ShipmentWorkflowStage_shipmentWorkflowId_fkey")
+  workflowstagerequirement workflowstagerequirement[]
+
+  @@unique([shipmentWorkflowId, stageCode], map: "ShipmentWorkflowStage_shipmentWorkflowId_stageCode_key")
+  @@index([completedById], map: "ShipmentWorkflowStage_completedById_idx")
+  @@index([shipmentWorkflowId], map: "ShipmentWorkflowStage_shipmentWorkflowId_idx")
+}
+
+model shipmentworkflowstep {
+  id                                             String                            @id
+  companyId                                      String
+  shipmentJobId                                  String
+  templateStepId                                 String?
+  serviceScope                                   shipmentworkflowstep_serviceScope
+  phase                                          shipmentworkflowstep_phase
+  stepKey                                        String
+  title                                          String
+  description                                    String?                           @db.Text
+  sortOrder                                      Int
+  isRequired                                     Boolean                           @default(true)
+  visibility                                     shipmentworkflowstep_visibility   @default(INTERNAL_ONLY)
+  status                                         shipmentworkflowstep_status       @default(NOT_STARTED)
+  handlerType                                    shipmentworkflowstep_handlerType?
+  assignedUserId                                 String?
+  vendorId                                       String?
+  dueDate                                        DateTime?
+  startedAt                                      DateTime?
+  completedAt                                    DateTime?
+  notes                                          String?                           @db.Text
+  createdById                                    String?
+  updatedById                                    String?
+  createdAt                                      DateTime                          @default(now())
+  updatedAt                                      DateTime
+  deletedAt                                      DateTime?
+  user_shipmentworkflowstep_assignedUserIdTouser user?                             @relation("shipmentworkflowstep_assignedUserIdTouser", fields: [assignedUserId], references: [id], map: "ShipmentWorkflowStep_assignedUserId_fkey")
+  company                                        company                           @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShipmentWorkflowStep_companyId_fkey")
+  shipmentjob                                    shipmentjob                       @relation(fields: [companyId, shipmentJobId], references: [companyId, id], onDelete: Cascade, map: "ShipmentWorkflowStep_companyId_shipmentJobId_fkey")
+  user_shipmentworkflowstep_createdByIdTouser    user?                             @relation("shipmentworkflowstep_createdByIdTouser", fields: [createdById], references: [id], map: "ShipmentWorkflowStep_createdById_fkey")
+  shipmentworkflowtemplatestep                   shipmentworkflowtemplatestep?     @relation(fields: [templateStepId], references: [id], map: "ShipmentWorkflowStep_templateStepId_fkey")
+  user_shipmentworkflowstep_updatedByIdTouser    user?                             @relation("shipmentworkflowstep_updatedByIdTouser", fields: [updatedById], references: [id], map: "ShipmentWorkflowStep_updatedById_fkey")
+  vendor                                         vendor?                           @relation(fields: [vendorId], references: [id], map: "ShipmentWorkflowStep_vendorId_fkey")
+
+  @@unique([shipmentJobId, stepKey], map: "ShipmentWorkflowStep_shipmentJobId_stepKey_key")
+  @@index([assignedUserId], map: "ShipmentWorkflowStep_assignedUserId_idx")
+  @@index([companyId], map: "ShipmentWorkflowStep_companyId_idx")
+  @@index([companyId, shipmentJobId], map: "ShipmentWorkflowStep_companyId_shipmentJobId_fkey")
+  @@index([createdAt], map: "ShipmentWorkflowStep_createdAt_idx")
+  @@index([createdById], map: "ShipmentWorkflowStep_createdById_fkey")
+  @@index([dueDate], map: "ShipmentWorkflowStep_dueDate_idx")
+  @@index([phase], map: "ShipmentWorkflowStep_phase_idx")
+  @@index([shipmentJobId], map: "ShipmentWorkflowStep_shipmentJobId_idx")
+  @@index([status], map: "ShipmentWorkflowStep_status_idx")
+  @@index([templateStepId], map: "ShipmentWorkflowStep_templateStepId_fkey")
+  @@index([updatedById], map: "ShipmentWorkflowStep_updatedById_fkey")
+  @@index([vendorId], map: "ShipmentWorkflowStep_vendorId_idx")
+}
+
+model shipmentworkflowtemplatestep {
+  id                   String                                         @id
+  companyId            String?
+  serviceScope         shipmentworkflowtemplatestep_serviceScope
+  phase                shipmentworkflowtemplatestep_phase
+  stepKey              String
+  title                String
+  description          String?                                        @db.Text
+  sortOrder            Int
+  isRequired           Boolean                                        @default(true)
+  defaultVisibility    shipmentworkflowtemplatestep_defaultVisibility @default(INTERNAL_ONLY)
+  isActive             Boolean                                        @default(true)
+  createdAt            DateTime                                       @default(now())
+  updatedAt            DateTime
+  shipmentworkflowstep shipmentworkflowstep[]
+  company              company?                                       @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShipmentWorkflowTemplateStep_companyId_fkey")
+
+  @@unique([companyId, serviceScope, stepKey], map: "ShipmentWorkflowTemplateStep_companyId_serviceScope_stepKey_key")
+  @@index([companyId], map: "ShipmentWorkflowTemplateStep_companyId_idx")
+  @@index([isActive], map: "ShipmentWorkflowTemplateStep_isActive_idx")
+  @@index([phase], map: "ShipmentWorkflowTemplateStep_phase_idx")
+  @@index([serviceScope], map: "ShipmentWorkflowTemplateStep_serviceScope_idx")
+  @@index([sortOrder], map: "ShipmentWorkflowTemplateStep_sortOrder_idx")
+}
+
+model shippinginstruction {
+  id                  String                                @id
+  companyId           String
+  shipmentJobId       String                                @unique(map: "ShippingInstruction_shipmentJobId_key")
+  status              shippinginstruction_status            @default(DRAFT)
+  bookingReference    String?
+  shipper             String?
+  consignee           String?
+  notifyParty         String?
+  secondNotifyParty   String?
+  forwarderReference  String?
+  carrierReference    String?
+  vesselVoyageFlight  String?
+  placeOfReceipt      String?
+  portOfLoading       String?
+  portOfDischarge     String?
+  finalDestination    String?
+  etd                 DateTime?
+  eta                 DateTime?
+  cargoDescription    String                                @db.Text
+  hsCode              String?
+  marksAndNumbers     String?                               @db.Text
+  packageCount        Int?
+  packageType         String?
+  grossWeight         Decimal?                              @db.Decimal(12, 3)
+  netWeight           Decimal?                              @db.Decimal(12, 3)
+  cbm                 Decimal?                              @db.Decimal(12, 3)
+  containerNumbers    String?
+  sealNumbers         String?
+  freightTerm         shippinginstruction_freightTerm?
+  releasePreference   shippinginstruction_releasePreference @default(NOT_APPLICABLE)
+  originalCopies      Int?
+  specialInstructions String?                               @db.Text
+  submittedAt         DateTime?
+  submittedById       String?
+  createdAt           DateTime                              @default(now())
+  updatedAt           DateTime
+  billoflading        billoflading?
+  company             company                               @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ShippingInstruction_companyId_fkey")
+  shipmentjob         shipmentjob                           @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "ShippingInstruction_shipmentJobId_fkey")
+  user                user?                                 @relation(fields: [submittedById], references: [id], map: "ShippingInstruction_submittedById_fkey")
+
+  @@index([companyId], map: "ShippingInstruction_companyId_idx")
+  @@index([status], map: "ShippingInstruction_status_idx")
+  @@index([submittedById], map: "ShippingInstruction_submittedById_fkey")
+}
+
+model stuffingplan {
+  id                 String              @id
+  companyId          String
+  shipmentJobId      String              @unique(map: "StuffingPlan_shipmentJobId_key")
+  status             stuffingplan_status @default(NOT_PLANNED)
+  depotLocation      String?
+  plannedStuffingAt  DateTime?
+  actualStuffingAt   DateTime?
+  containerPickupAt  DateTime?
+  containersRequired Int?
+  cargoReceivedAt    DateTime?
+  loadedAt           DateTime?
+  remarks            String?             @db.Text
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime
+  company            company             @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "StuffingPlan_companyId_fkey")
+  shipmentjob        shipmentjob         @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "StuffingPlan_shipmentJobId_fkey")
+
+  @@index([companyId], map: "StuffingPlan_companyId_idx")
+  @@index([status], map: "StuffingPlan_status_idx")
+}
+
+model task {
+  id                             String           @id
+  companyId                      String
+  branchId                       String
+  title                          String
+  description                    String?          @db.Text
+  status                         task_status      @default(TODO)
+  priority                       task_priority    @default(MEDIUM)
+  dueDate                        DateTime?
+  assignedUserId                 String?
+  createdById                    String
+  customerId                     String?
+  vendorId                       String?
+  shipmentJobId                  String?
+  quotationId                    String?
+  invoiceId                      String?
+  shipmentRequestId              String?
+  completedAt                    DateTime?
+  recurrenceId                   String?
+  occurrenceDate                 DateTime?
+  createdAt                      DateTime         @default(now())
+  updatedAt                      DateTime
+  deletedAt                      DateTime?
+  user_task_assignedUserIdTouser user?            @relation("task_assignedUserIdTouser", fields: [assignedUserId], references: [id], map: "Task_assignedUserId_fkey")
+  company                        company          @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Task_companyId_fkey")
+  branch                         branch           @relation(fields: [branchId], references: [id], map: "Task_branchId_fkey")
+  user_task_createdByIdTouser    user             @relation("task_createdByIdTouser", fields: [createdById], references: [id], map: "Task_createdById_fkey")
+  customer                       customer?        @relation(fields: [customerId], references: [id], map: "Task_customerId_fkey")
+  invoice                        invoice?         @relation(fields: [invoiceId], references: [id], map: "Task_invoiceId_fkey")
+  quotation                      quotation?       @relation(fields: [quotationId], references: [id], map: "Task_quotationId_fkey")
+  shipmentjob                    shipmentjob?     @relation(fields: [shipmentJobId], references: [id], map: "Task_shipmentJobId_fkey")
+  shipmentrequest                shipmentrequest? @relation(fields: [shipmentRequestId], references: [id], map: "Task_shipmentRequestId_fkey")
+  vendor                         vendor?          @relation(fields: [vendorId], references: [id], map: "Task_vendorId_fkey")
+  taskrecurrence                 taskrecurrence?  @relation(fields: [recurrenceId], references: [id], onDelete: SetNull, map: "Task_recurrenceId_fkey")
+  taskcomment                    taskcomment[]
+
+  @@unique([recurrenceId, occurrenceDate], map: "Task_recurrenceId_occurrenceDate_key")
+  @@index([assignedUserId], map: "Task_assignedUserId_idx")
+  @@index([companyId], map: "Task_companyId_idx")
+  @@index([branchId], map: "Task_branchId_idx")
+  @@index([createdAt], map: "Task_createdAt_idx")
+  @@index([createdById], map: "Task_createdById_idx")
+  @@index([customerId], map: "Task_customerId_idx")
+  @@index([deletedAt], map: "Task_deletedAt_idx")
+  @@index([dueDate], map: "Task_dueDate_idx")
+  @@index([invoiceId], map: "Task_invoiceId_idx")
+  @@index([priority], map: "Task_priority_idx")
+  @@index([quotationId], map: "Task_quotationId_idx")
+  @@index([shipmentJobId], map: "Task_shipmentJobId_idx")
+  @@index([shipmentRequestId], map: "Task_shipmentRequestId_idx")
+  @@index([status], map: "Task_status_idx")
+  @@index([vendorId], map: "Task_vendorId_idx")
+}
+
+model taskcomment {
+  id        String    @id
+  companyId String
+  taskId    String
+  authorId  String
+  body      String    @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  deletedAt DateTime?
+  user      user      @relation(fields: [authorId], references: [id], map: "TaskComment_authorId_fkey")
+  company   company   @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "TaskComment_companyId_fkey")
+  task      task      @relation(fields: [taskId], references: [id], onDelete: Cascade, map: "TaskComment_taskId_fkey")
+
+  @@index([authorId], map: "TaskComment_authorId_idx")
+  @@index([companyId], map: "TaskComment_companyId_idx")
+  @@index([createdAt], map: "TaskComment_createdAt_idx")
+  @@index([deletedAt], map: "TaskComment_deletedAt_idx")
+  @@index([taskId], map: "TaskComment_taskId_idx")
+}
+
+model taskrecurrence {
+  id                String                    @id
+  companyId         String
+  branchId          String
+  createdById       String
+  title             String
+  description       String?                   @db.Text
+  priority          task_priority             @default(MEDIUM)
+  assignedUserId    String?
+  customerId        String?
+  vendorId          String?
+  shipmentJobId     String?
+  quotationId       String?
+  invoiceId         String?
+  shipmentRequestId String?
+  frequency         taskrecurrence_frequency
+  interval          Int                       @default(1)
+  timezone          String
+  startDate         DateTime
+  endDate           DateTime?
+  dueInDays         Int                       @default(0)
+  isActive          Boolean                   @default(true)
+  nextRunAt         DateTime
+  lastRunAt         DateTime?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime
+  deletedAt         DateTime?
+  company                                   company @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "TaskRecurrence_companyId_fkey")
+  branch                                    branch  @relation(fields: [branchId], references: [id], map: "TaskRecurrence_branchId_fkey")
+  user_taskrecurrence_createdByIdTouser     user    @relation("taskrecurrence_createdByIdTouser", fields: [createdById], references: [id], map: "TaskRecurrence_createdById_fkey")
+  user_taskrecurrence_assignedUserIdTouser  user?   @relation("taskrecurrence_assignedUserIdTouser", fields: [assignedUserId], references: [id], map: "TaskRecurrence_assignedUserId_fkey")
+  task                                      task[]
+
+  @@index([companyId], map: "TaskRecurrence_companyId_idx")
+  @@index([branchId], map: "TaskRecurrence_branchId_idx")
+  @@index([createdById], map: "TaskRecurrence_createdById_idx")
+  @@index([assignedUserId], map: "TaskRecurrence_assignedUserId_idx")
+  @@index([isActive, nextRunAt], map: "TaskRecurrence_isActive_nextRunAt_idx")
+  @@index([deletedAt], map: "TaskRecurrence_deletedAt_idx")
+}
+
+model user {
+  id                                                             String                    @id
+  companyId                                                      String?
+  name                                                           String
+  email                                                          String                    @unique(map: "User_email_key")
+  emailVerified                                                  DateTime?
+  passwordHash                                                   String?
+  image                                                          String?
+  phone                                                          String?
+  designation                                                    String?
+  status                                                         user_status               @default(ACTIVE)
+  createdAt                                                      DateTime                  @default(now())
+  updatedAt                                                      DateTime
+  deletedAt                                                      DateTime?
+  scope                                                          user_scope                @default(COMPANY)
+  customerId                                                     String?
+  account                                                        account[]
+  approvaldecision                                                approvaldecision[]
+  approvalpolicy                                                  approvalpolicy[]
+  approvalrequest                                                 approvalrequest[]
+  approvalstep                                                    approvalstep[]
+  auditlog                                                       auditlog[]
+  clientportalaccount                                            clientportalaccount[]
+  communicationaccount                                           communicationaccount[]
+  documentapproval                                               documentapproval[]
+  documenttemplate                                                documenttemplate[]
+  documenttemplateversion                                         documenttemplateversion[]
+  documentversion                                                documentversion[]
+  freightbooking                                                 freightbooking[]
+  freightdocument_freightdocument_lockedByIdTouser               freightdocument[]         @relation("freightdocument_lockedByIdTouser")
+  freightdocument_freightdocument_rejectedByIdTouser             freightdocument[]         @relation("freightdocument_rejectedByIdTouser")
+  freightdocument_freightdocument_uploadedByIdTouser             freightdocument[]         @relation("freightdocument_uploadedByIdTouser")
+  freightdocument_freightdocument_verifiedByIdTouser             freightdocument[]         @relation("freightdocument_verifiedByIdTouser")
+  importjob                                                      importjob[]
+  invoice                                                        invoice[]
+  notification                                                   notification[]
+  notificationdelivery                                           notificationdelivery[]
+  passwordresettoken                                             passwordresettoken[]
+  payment                                                        payment[]
+  quotation_quotation_approvedByIdTouser                         quotation[]               @relation("quotation_approvedByIdTouser")
+  quotation_quotation_createdByIdTouser                          quotation[]               @relation("quotation_createdByIdTouser")
+  savedview                                                      savedview[]
+  session                                                        session[]
+  shipmentcostitem                                               shipmentcostitem[]
+  shipmentdocument_shipmentdocument_rejectedByIdTouser           shipmentdocument[]        @relation("shipmentdocument_rejectedByIdTouser")
+  shipmentdocument_shipmentdocument_uploadedByIdTouser           shipmentdocument[]        @relation("shipmentdocument_uploadedByIdTouser")
+  shipmentdocument_shipmentdocument_verifiedByIdTouser           shipmentdocument[]        @relation("shipmentdocument_verifiedByIdTouser")
+  shipmentjob_shipmentjob_assignedToIdTouser                     shipmentjob[]             @relation("shipmentjob_assignedToIdTouser")
+  shipmentjob_shipmentjob_createdByIdTouser                      shipmentjob[]             @relation("shipmentjob_createdByIdTouser")
+  shipmentrequest_shipmentrequest_createdByIdTouser              shipmentrequest[]         @relation("shipmentrequest_createdByIdTouser")
+  shipmentrequest_shipmentrequest_updatedByIdTouser              shipmentrequest[]         @relation("shipmentrequest_updatedByIdTouser")
+  shipmentstatusevent                                            shipmentstatusevent[]
+  shipmentworkflowstage                                          shipmentworkflowstage[]
+  shipmentworkflowstep_shipmentworkflowstep_assignedUserIdTouser shipmentworkflowstep[]    @relation("shipmentworkflowstep_assignedUserIdTouser")
+  shipmentworkflowstep_shipmentworkflowstep_createdByIdTouser    shipmentworkflowstep[]    @relation("shipmentworkflowstep_createdByIdTouser")
+  shipmentworkflowstep_shipmentworkflowstep_updatedByIdTouser    shipmentworkflowstep[]    @relation("shipmentworkflowstep_updatedByIdTouser")
+  shippinginstruction                                            shippinginstruction[]
+  task_task_assignedUserIdTouser                                 task[]                    @relation("task_assignedUserIdTouser")
+  task_task_createdByIdTouser                                    task[]                    @relation("task_createdByIdTouser")
+  taskcomment                                                    taskcomment[]
+  taskrecurrence_taskrecurrence_createdByIdTouser                taskrecurrence[]          @relation("taskrecurrence_createdByIdTouser")
+  taskrecurrence_taskrecurrence_assignedUserIdTouser              taskrecurrence[]          @relation("taskrecurrence_assignedUserIdTouser")
+  company                                                        company?                  @relation(fields: [companyId], references: [id], map: "User_companyId_fkey")
+  customer                                                       customer?                 @relation(fields: [customerId], references: [id], map: "User_customerId_fkey")
+  userrole                                                       userrole[]
+  userbranchmembership                                           userbranchmembership[]
+  userdashboardlayout                                            userdashboardlayout[]
+  vendorbill                                                     vendorbill[]
+  workflowoverride                                               workflowoverride[]
+  workflowstageaudit                                             workflowstageaudit[]
+  workflowstagetransition                                        workflowstagetransition[]
+
+  @@index([companyId], map: "User_companyId_idx")
+  @@index([createdAt], map: "User_createdAt_idx")
+  @@index([customerId], map: "User_customerId_idx")
+  @@index([scope], map: "User_scope_idx")
+  @@index([status], map: "User_status_idx")
+}
+
+model branch {
+  id                   String                 @id
+  companyId            String
+  code                 String
+  name                 String
+  email                String?
+  phone                String?
+  address              String?
+  isActive             Boolean                @default(true)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  deletedAt            DateTime?
+  company              company                @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Branch_companyId_fkey")
+  userbranchmembership userbranchmembership[]
+  approvalpolicy       approvalpolicy[]
+  approvalrequest      approvalrequest[]
+  freightdocument      freightdocument[]
+  invoice              invoice[]
+  notification         notification[]
+  notificationdelivery notificationdelivery[]
+  payment              payment[]
+  quotation            quotation[]
+  shipmentdocument     shipmentdocument[]
+  shipmentjob          shipmentjob[]
+  shipmentrequest      shipmentrequest[]
+  task                 task[]
+  taskrecurrence       taskrecurrence[]
+  vendorbill           vendorbill[]
+
+  @@unique([companyId, code], map: "Branch_companyId_code_key")
+  @@index([companyId, isActive], map: "Branch_companyId_isActive_idx")
+  @@index([deletedAt], map: "Branch_deletedAt_idx")
+}
+
+model userbranchmembership {
+  id        String   @id
+  userId    String
+  branchId  String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  branch    branch   @relation(fields: [branchId], references: [id], onDelete: Cascade, map: "UserBranchMembership_branchId_fkey")
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserBranchMembership_userId_fkey")
+
+  @@unique([userId, branchId], map: "UserBranchMembership_userId_branchId_key")
+  @@index([branchId], map: "UserBranchMembership_branchId_idx")
+  @@index([userId, isDefault], map: "UserBranchMembership_userId_isDefault_idx")
+}
+
+model userrole {
+  id        String   @id
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  role      role     @relation(fields: [roleId], references: [id], onDelete: Cascade, map: "UserRole_roleId_fkey")
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserRole_userId_fkey")
+
+  @@unique([userId, roleId], map: "UserRole_userId_roleId_key")
+  @@index([roleId], map: "UserRole_roleId_idx")
+  @@index([userId], map: "UserRole_userId_idx")
+}
+
+model userdashboardlayout {
+  id            String   @id
+  companyId     String
+  userId        String
+  schemaVersion Int      @default(1)
+  layoutJson    String   @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  company       company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "UserDashboardLayout_companyId_fkey")
+  user          user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserDashboardLayout_userId_fkey")
+
+  @@unique([companyId, userId], map: "UserDashboardLayout_companyId_userId_key")
+  @@index([companyId], map: "UserDashboardLayout_companyId_idx")
+}
+
+model vendor {
+  id                   String                 @id
+  companyId            String
+  name                 String
+  type                 vendor_type
+  email                String?
+  phone                String?
+  address              String?
+  paymentTerms         String?
+  notes                String?                @db.Text
+  status               vendor_status          @default(ACTIVE)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  deletedAt            DateTime?
+  carrierproposal      carrierproposal[]
+  carrierquery         carrierquery[]
+  freightbooking       freightbooking[]
+  payment              payment[]
+  prealert             prealert[]
+  quotationcharge      quotationcharge[]
+  shipmentcostitem     shipmentcostitem[]
+  shipmentworkflowstep shipmentworkflowstep[]
+  task                 task[]
+  company              company                @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Vendor_companyId_fkey")
+  vendorbill           vendorbill[]
+  vendorcontact        vendorcontact[]
+
+  @@index([companyId], map: "Vendor_companyId_idx")
+  @@index([createdAt], map: "Vendor_createdAt_idx")
+  @@index([name], map: "Vendor_name_idx")
+  @@index([status], map: "Vendor_status_idx")
+  @@index([type], map: "Vendor_type_idx")
+}
+
+model vendorbill {
+  id                String              @id
+  companyId         String
+  branchId          String
+  billNo            String
+  vendorId          String
+  shipmentJobId     String?
+  status            vendorbill_status   @default(DRAFT)
+  billDate          DateTime
+  dueDate           DateTime?
+  currency          vendorbill_currency @default(BDT)
+  exchangeRateToBDT Decimal             @default(1.0000) @db.Decimal(14, 4)
+  subtotal          Decimal             @default(0.00) @db.Decimal(14, 2)
+  discountAmount    Decimal             @default(0.00) @db.Decimal(14, 2)
+  taxAmount         Decimal             @default(0.00) @db.Decimal(14, 2)
+  totalAmount       Decimal             @default(0.00) @db.Decimal(14, 2)
+  paidAmount        Decimal             @default(0.00) @db.Decimal(14, 2)
+  dueAmount         Decimal             @default(0.00) @db.Decimal(14, 2)
+  remarks           String?             @db.Text
+  createdById       String
+  receivedAt        DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  deletedAt         DateTime?
+  payment           payment[]
+  company           company             @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "VendorBill_companyId_fkey")
+  branch            branch              @relation(fields: [branchId], references: [id], map: "VendorBill_branchId_fkey")
+  user              user                @relation(fields: [createdById], references: [id], map: "VendorBill_createdById_fkey")
+  shipmentjob       shipmentjob?        @relation(fields: [shipmentJobId], references: [id], map: "VendorBill_shipmentJobId_fkey")
+  vendor            vendor              @relation(fields: [vendorId], references: [id], map: "VendorBill_vendorId_fkey")
+  vendorbillline    vendorbillline[]
+  approvalrequest   approvalrequest[]
+
+  @@unique([companyId, billNo], map: "VendorBill_companyId_billNo_key")
+  @@index([billDate], map: "VendorBill_billDate_idx")
+  @@index([companyId], map: "VendorBill_companyId_idx")
+  @@index([branchId], map: "VendorBill_branchId_idx")
+  @@index([createdAt], map: "VendorBill_createdAt_idx")
+  @@index([createdById], map: "VendorBill_createdById_fkey")
+  @@index([dueDate], map: "VendorBill_dueDate_idx")
+  @@index([shipmentJobId], map: "VendorBill_shipmentJobId_idx")
+  @@index([status], map: "VendorBill_status_idx")
+  @@index([vendorId], map: "VendorBill_vendorId_idx")
+}
+
+model vendorbillline {
+  id                 String                     @id
+  companyId          String
+  vendorBillId       String
+  shipmentCostItemId String?
+  description        String
+  chargeType         vendorbillline_chargeType?
+  quantity           Decimal                    @default(1.000) @db.Decimal(12, 3)
+  unitPrice          Decimal                    @default(0.00) @db.Decimal(14, 2)
+  amount             Decimal                    @default(0.00) @db.Decimal(14, 2)
+  remarks            String?                    @db.Text
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime
+  deletedAt          DateTime?
+  company            company                    @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "VendorBillLine_companyId_fkey")
+  shipmentcostitem   shipmentcostitem?          @relation(fields: [shipmentCostItemId], references: [id], map: "VendorBillLine_shipmentCostItemId_fkey")
+  vendorbill         vendorbill                 @relation(fields: [vendorBillId], references: [id], onDelete: Cascade, map: "VendorBillLine_vendorBillId_fkey")
+
+  @@index([companyId], map: "VendorBillLine_companyId_idx")
+  @@index([shipmentCostItemId], map: "VendorBillLine_shipmentCostItemId_idx")
+  @@index([vendorBillId], map: "VendorBillLine_vendorBillId_idx")
+}
+
+model vendorbillsequence {
+  id              String   @id
+  companyId       String
+  year            Int
+  currentSequence Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  company         company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "VendorBillSequence_companyId_fkey")
+
+  @@unique([companyId, year], map: "VendorBillSequence_companyId_year_key")
+  @@index([companyId], map: "VendorBillSequence_companyId_idx")
+}
+
+model vendorcontact {
+  id          String   @id
+  vendorId    String
+  name        String
+  email       String?
+  phone       String?
+  designation String?
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  vendor      vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade, map: "VendorContact_vendorId_fkey")
+
+  @@index([vendorId], map: "VendorContact_vendorId_idx")
+}
+
+model verificationtoken {
+  identifier String
+  token      String   @unique(map: "VerificationToken_token_key")
+  expires    DateTime
+  id         String   @id
+
+  @@unique([identifier, token], map: "VerificationToken_identifier_token_key")
+}
+
+model workflowoverride {
+  id                 String           @id
+  shipmentWorkflowId String
+  stageCode          String
+  reason             String           @db.Text
+  overriddenById     String
+  createdAt          DateTime         @default(now())
+  user               user             @relation(fields: [overriddenById], references: [id], map: "WorkflowOverride_overriddenById_fkey")
+  shipmentworkflow   shipmentworkflow @relation(fields: [shipmentWorkflowId], references: [id], onDelete: Cascade, map: "WorkflowOverride_shipmentWorkflowId_fkey")
+
+  @@index([overriddenById], map: "WorkflowOverride_overriddenById_idx")
+  @@index([shipmentWorkflowId], map: "WorkflowOverride_shipmentWorkflowId_idx")
+}
+
+model workflowstageaudit {
+  id                 String                             @id
+  shipmentWorkflowId String
+  stageCode          String
+  action             String
+  actorId            String?
+  previousStatus     workflowstageaudit_previousStatus?
+  newStatus          workflowstageaudit_newStatus
+  remarks            String?                            @db.Text
+  createdAt          DateTime                           @default(now())
+  user               user?                              @relation(fields: [actorId], references: [id], map: "WorkflowStageAudit_actorId_fkey")
+  shipmentworkflow   shipmentworkflow                   @relation(fields: [shipmentWorkflowId], references: [id], onDelete: Cascade, map: "WorkflowStageAudit_shipmentWorkflowId_fkey")
+
+  @@index([actorId], map: "WorkflowStageAudit_actorId_idx")
+  @@index([shipmentWorkflowId], map: "WorkflowStageAudit_shipmentWorkflowId_idx")
+}
+
+model workflowstagerequirement {
+  id                      String                        @id
+  workflowStageTemplateId String?
+  shipmentWorkflowStageId String?
+  type                    workflowstagerequirement_type
+  target                  String
+  description             String                        @db.Text
+  isFulfilled             Boolean                       @default(false)
+  fulfilledAt             DateTime?
+  createdAt               DateTime                      @default(now())
+  updatedAt               DateTime
+  shipmentworkflowstage   shipmentworkflowstage?        @relation(fields: [shipmentWorkflowStageId], references: [id], onDelete: Cascade, map: "WorkflowStageRequirement_shipmentWorkflowStageId_fkey")
+  workflowstagetemplate   workflowstagetemplate?        @relation(fields: [workflowStageTemplateId], references: [id], onDelete: Cascade, map: "WorkflowStageRequirement_workflowStageTemplateId_fkey")
+
+  @@index([shipmentWorkflowStageId], map: "WorkflowStageRequirement_shipmentWorkflowStageId_idx")
+  @@index([workflowStageTemplateId], map: "WorkflowStageRequirement_workflowStageTemplateId_idx")
+}
+
+model workflowstagetemplate {
+  id                       String                     @id
+  workflowTemplateId       String
+  stageCode                String
+  stageName                String
+  sortOrder                Int
+  description              String?                    @db.Text
+  isRequired               Boolean                    @default(true)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime
+  workflowstagerequirement workflowstagerequirement[]
+  workflowtemplate         workflowtemplate           @relation(fields: [workflowTemplateId], references: [id], onDelete: Cascade, map: "WorkflowStageTemplate_workflowTemplateId_fkey")
+
+  @@unique([workflowTemplateId, stageCode], map: "WorkflowStageTemplate_workflowTemplateId_stageCode_key")
+  @@index([workflowTemplateId], map: "WorkflowStageTemplate_workflowTemplateId_idx")
+}
+
+model workflowstagetransition {
+  id                 String           @id
+  shipmentWorkflowId String
+  fromStageCode      String?
+  toStageCode        String
+  triggeredById      String?
+  createdAt          DateTime         @default(now())
+  shipmentworkflow   shipmentworkflow @relation(fields: [shipmentWorkflowId], references: [id], onDelete: Cascade, map: "WorkflowStageTransition_shipmentWorkflowId_fkey")
+  user               user?            @relation(fields: [triggeredById], references: [id], map: "WorkflowStageTransition_triggeredById_fkey")
+
+  @@index([shipmentWorkflowId], map: "WorkflowStageTransition_shipmentWorkflowId_idx")
+  @@index([triggeredById], map: "WorkflowStageTransition_triggeredById_idx")
+}
+
+model workflowtemplate {
+  id                    String                        @id
+  companyId             String?
+  name                  String
+  mode                  workflowtemplate_mode
+  direction             workflowtemplate_direction
+  loadType              workflowtemplate_loadType
+  serviceScope          workflowtemplate_serviceScope
+  isActive              Boolean                       @default(true)
+  createdAt             DateTime                      @default(now())
+  updatedAt             DateTime
+  shipmentworkflow      shipmentworkflow[]
+  workflowstagetemplate workflowstagetemplate[]
+  company               company?                      @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "WorkflowTemplate_companyId_fkey")
+
+  @@unique([companyId, mode, direction, loadType, serviceScope], map: "WorkflowTemplate_companyId_mode_direction_loadType_serviceSc_key")
+  @@index([companyId], map: "WorkflowTemplate_companyId_idx")
+}
+
+enum approvalpolicy_documentType {
+  VENDOR_BILL
+  PAYMENT
+}
+
+enum approvalrequest_status {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum approvalstep_status {
+  PENDING
+  APPROVED
+  REJECTED
+  SKIPPED
+}
+
+enum approvaldecision_decision {
+  APPROVED
+  REJECTED
+}
+
+enum companyaisettings_provider {
+  GEMINI
+  OPENAI
+  ANTHROPIC
+}
+
+enum companymoduleaccess_moduleKey {
+  SHIPMENTS
+  DOCUMENTS
+  QUOTATIONS
+  COSTING
+  BILLING
+  REPORTS
+  TASKS
+  SHIPMENT_OPERATIONS
+  CLIENT_PORTAL
+  WHATSAPP_ALERTS
+  API_ACCESS
+}
+
+enum companysubscription_planType {
+  TRIAL
+  MONTHLY
+  YEARLY
+  LIFETIME_CLOUD
+  SELF_HOSTED
+}
+
+enum documentchecklistitem_shipmentType {
+  IMPORT
+  EXPORT
+}
+
+enum freightdocumentsequence_documentType {
+  HBL
+  HAWB
+  MANIFEST
+  DEBIT_NOTE
+  SHIPPING_INSTRUCTION
+  ARRIVAL_NOTICE
+  MBL
+  MAWB
+  BOOKING_CONFIRMATION
+  DELIVERY_ORDER
+  CARRIER_INVOICE
+  VENDOR_DEBIT_NOTE
+  COMMERCIAL_INVOICE
+  PACKING_LIST
+  CERTIFICATE_OF_ORIGIN
+  MSDS_DG_CERTIFICATE
+  INSURANCE_CERTIFICATE
+  BILL_OF_ENTRY
+  EXPORT_DECLARATION
+  CUSTOMS_RELEASE
+  GATE_PASS
+  POD
+  DELIVERY_CHALLAN
+  WAREHOUSE_RECEIPT
+}
+
+enum role_code {
+  SUPER_ADMIN
+  PLATFORM_OWNER
+  PLATFORM_ADMIN
+  PLATFORM_SUPPORT
+  PLATFORM_BILLING
+  COMPANY_ADMIN
+  OPERATIONS_MANAGER
+  DOCUMENTATION_OFFICER
+  ACCOUNTS_OFFICER
+  SALES_EXECUTIVE
+  CLIENT_USER
+}
+
+enum shipmentworkflowtemplatestep_serviceScope {
+  PORT_TO_PORT
+  DOOR_TO_PORT
+  PORT_TO_DOOR
+  DOOR_TO_DOOR
+}
+
+enum cargoreleasechecklist_status {
+  NOT_ARRIVED
+  ARRIVED
+  DOCUMENTS_PENDING
+  PAYMENT_PENDING
+  BL_AUTH_PENDING
+  READY_FOR_RELEASE
+  RELEASED
+  DELIVERED
+  ON_HOLD
+  CANCELLED
+}
+
+enum communicationaccount_provider {
+  EMAIL_SMTP
+  WHATSAPP_CLOUD_API
+  WHATSAPP_WEB_QR_EXPERIMENTAL
+  SMS_HTTP_API
+}
+
+enum companysubscription_deploymentType {
+  CLOUD
+  SELF_HOSTED
+}
+
+enum documentapproval_status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum documentchecklistitem_category {
+  IMPORT
+  EXPORT
+  COMMON
+}
+
+enum documenttemplate_documentType {
+  QUOTATION
+  INVOICE
+  HBL
+  HAWB
+  DEBIT_NOTE
+  MANIFEST
+}
+
+enum freightdocument_type {
+  HBL
+  HAWB
+  MANIFEST
+  DEBIT_NOTE
+  SHIPPING_INSTRUCTION
+  ARRIVAL_NOTICE
+  MBL
+  MAWB
+  BOOKING_CONFIRMATION
+  DELIVERY_ORDER
+  CARRIER_INVOICE
+  VENDOR_DEBIT_NOTE
+  COMMERCIAL_INVOICE
+  PACKING_LIST
+  CERTIFICATE_OF_ORIGIN
+  MSDS_DG_CERTIFICATE
+  INSURANCE_CERTIFICATE
+  BILL_OF_ENTRY
+  EXPORT_DECLARATION
+  CUSTOMS_RELEASE
+  GATE_PASS
+  POD
+  DELIVERY_CHALLAN
+  WAREHOUSE_RECEIPT
+}
+
+enum payment_direction {
+  RECEIVED
+  PAID
+}
+
+enum shipmentworkflowtemplatestep_phase {
+  ORIGIN
+  CARRIER
+  DESTINATION
+  DELIVERY
+  CLOSURE
+}
+
+enum shippinginstruction_status {
+  DRAFT
+  READY
+  SUBMITTED
+  ACCEPTED
+  REVISION_REQUIRED
+  CANCELLED
+}
+
+enum stuffingplan_status {
+  NOT_PLANNED
+  PLANNED
+  CONTAINER_ASSIGNED
+  CARGO_RECEIVED
+  STUFFING_IN_PROGRESS
+  LOADED
+  COMPLETED
+}
+
+enum vendor_type {
+  SHIPPING_LINE
+  AIRLINE
+  C_AND_F_AGENT
+  TRUCK_VENDOR
+  WAREHOUSE_CFS
+  OVERSEAS_AGENT
+  INSURANCE_PROVIDER
+  BANK
+  OTHER
+}
+
+enum workflowstagerequirement_type {
+  FIELD
+  DOCUMENT
+  APPROVAL
+  PREVIOUS_STAGE
+  FINANCIAL
+}
+
+enum workflowtemplate_mode {
+  SEA
+  AIR
+  LAND
+}
+
+enum billoflading_documentType {
+  HBL
+  MBL
+  AWB
+  HAWB
+  CMR
+}
+
+enum communicationaccount_channel {
+  IN_APP
+  EMAIL
+  WHATSAPP
+  SMS
+}
+
+enum companysubscription_status {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  EXPIRED
+  CANCELLED
+}
+
+enum documentapproval_approverType {
+  INTERNAL_USER
+  CLIENT_PORTAL_ACCOUNT
+}
+
+enum notification_scope {
+  PLATFORM
+  COMPANY
+  CLIENT_PORTAL
+}
+
+enum notificationdelivery_scope {
+  PLATFORM
+  COMPANY
+  CLIENT_PORTAL
+}
+
+enum payment_status {
+  PENDING
+  CLEARED
+  BOUNCED
+  CANCELLED
+}
+
+enum prealert_status {
+  DRAFT
+  READY
+  SENT
+  ACKNOWLEDGED
+  REVISION_REQUIRED
+  CANCELLED
+}
+
+enum quotationcharge_chargeType {
+  FREIGHT
+  ORIGIN
+  DESTINATION
+  CUSTOMS
+  TRANSPORT
+  DOCUMENTATION
+  PORT
+  WAREHOUSE
+  INSURANCE
+  OTHER
+}
+
+enum shipmentcostitem_chargeType {
+  FREIGHT
+  ORIGIN
+  DESTINATION
+  CUSTOMS
+  TRANSPORT
+  DOCUMENTATION
+  PORT
+  WAREHOUSE
+  INSURANCE
+  OTHER
+}
+
+enum shipmentjob_shipmentType {
+  IMPORT
+  EXPORT
+}
+
+enum shipmentworkflowstep_serviceScope {
+  PORT_TO_PORT
+  DOOR_TO_PORT
+  PORT_TO_DOOR
+  DOOR_TO_DOOR
+}
+
+enum task_status {
+  TODO
+  IN_PROGRESS
+  WAITING
+  DONE
+  CANCELLED
+}
+
+enum workflowtemplate_direction {
+  IMPORT
+  EXPORT
+}
+
+enum freightdocument_status {
+  DRAFT
+  UNDER_REVIEW
+  APPROVED
+  LOCKED
+  AMENDED
+  CANCELLED
+  PENDING_RECEIPT
+  RECEIVED
+  VERIFIED
+  REJECTED
+  EXPIRED
+  NOT_APPLICABLE
+}
+
+enum invoiceline_chargeType {
+  FREIGHT
+  ORIGIN
+  DESTINATION
+  CUSTOMS
+  TRANSPORT
+  DOCUMENTATION
+  PORT
+  WAREHOUSE
+  INSURANCE
+  OTHER
+}
+
+enum notificationdelivery_channel {
+  IN_APP
+  EMAIL
+  WHATSAPP
+  SMS
+}
+
+enum notificationtemplate_channel {
+  IN_APP
+  EMAIL
+  WHATSAPP
+  SMS
+}
+
+enum quotation_shipmentType {
+  IMPORT
+  EXPORT
+}
+
+enum quotationcharge_chargeBasis {
+  PER_SHIPMENT
+  PER_CONTAINER
+  PER_CBM
+  PER_KG
+  PER_TON
+  PER_PACKAGE
+  PER_DOCUMENT
+  OTHER
+}
+
+enum shipmentcostitem_chargeBasis {
+  PER_SHIPMENT
+  PER_CONTAINER
+  PER_CBM
+  PER_KG
+  PER_TON
+  PER_PACKAGE
+  PER_DOCUMENT
+  OTHER
+}
+
+enum shipmentjob_transportMode {
+  SEA
+  AIR
+  LAND
+}
+
+enum shipmentrequest_status {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  QUOTED
+  REVISION_REQUESTED
+  ACCEPTED
+  REJECTED
+  CONVERTED
+  CANCELLED
+}
+
+enum shipmentworkflowstage_status {
+  NOT_STARTED
+  PENDING
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  SKIPPED
+  NOT_APPLICABLE
+}
+
+enum shipmentworkflowstep_phase {
+  ORIGIN
+  CARRIER
+  DESTINATION
+  DELIVERY
+  CLOSURE
+}
+
+enum task_priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum vendorbill_status {
+  DRAFT
+  RECEIVED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum vendorbillline_chargeType {
+  FREIGHT
+  ORIGIN
+  DESTINATION
+  CUSTOMS
+  TRANSPORT
+  DOCUMENTATION
+  PORT
+  WAREHOUSE
+  INSURANCE
+  OTHER
+}
+
+enum workflowstageaudit_previousStatus {
+  NOT_STARTED
+  PENDING
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  SKIPPED
+  NOT_APPLICABLE
+}
+
+enum workflowtemplate_loadType {
+  FCL
+  LCL
+  AIR_CARGO
+  TRUCK
+}
+
+enum carrierproposal_currency {
+  BDT
+  USD
+  EUR
+  GBP
+  CNY
+  INR
+  AED
+  RUB
+  OTHER
+}
+
+enum carrierquery_mode {
+  SEA
+  AIR
+  LAND
+}
+
+enum company_status {
+  ACTIVE
+  SUSPENDED
+}
+
+enum freightbooking_status {
+  NOT_STARTED
+  BOOKING_REQUESTED
+  BOOKING_ACKNOWLEDGED
+  BOOKING_CONFIRMED
+  FORWARDED_TO_CUSTOMER
+  CANCELLED
+  AMENDED
+}
+
+enum invoice_status {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum notificationdelivery_status {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  CANCELLED
+  SKIPPED
+}
+
+enum notificationtemplate_audienceScope {
+  PLATFORM
+  COMPANY
+  CLIENT_PORTAL
+}
+
+enum quotation_transportMode {
+  SEA
+  AIR
+  LAND
+}
+
+enum quotationcharge_currency {
+  BDT
+  USD
+  EUR
+  GBP
+  CNY
+  INR
+  AED
+  RUB
+  OTHER
+}
+
+enum shipmentcostitem_currency {
+  BDT
+  USD
+  EUR
+  GBP
+  CNY
+  INR
+  AED
+  RUB
+  OTHER
+}
+
+enum shipmentdocument_status {
+  PENDING
+  UPLOADED
+  VERIFIED
+  REJECTED
+}
+
+enum shipmentjob_loadType {
+  FCL
+  LCL
+  AIR_CARGO
+  TRUCK
+}
+
+enum shipmentrequest_shipmentType {
+  IMPORT
+  EXPORT
+}
+
+enum workflowstageaudit_newStatus {
+  NOT_STARTED
+  PENDING
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  SKIPPED
+  NOT_APPLICABLE
+}
+
+enum workflowtemplate_serviceScope {
+  PORT_TO_PORT
+  DOOR_TO_PORT
+  PORT_TO_DOOR
+  DOOR_TO_DOOR
+}
+
+enum quotation_loadType {
+  FCL
+  LCL
+  AIR_CARGO
+  TRUCK
+}
+
+enum shipmentjob_tradeTerm {
+  FOB
+  CIF
+  CNF
+  EXW
+  DDP
+  DAP
+  FCA
+  OTHER
+}
+
+enum shipmentrequest_transportMode {
+  SEA
+  AIR
+  LAND
+}
+
+enum billoflading_approvalStatus {
+  NOT_RECEIVED
+  DRAFT_RECEIVED
+  SENT_TO_CUSTOMER
+  CUSTOMER_REVIEWING
+  APPROVED_BY_CUSTOMER
+  CORRECTION_REQUESTED
+  FINAL_LOCKED
+}
+
+enum clientportalaccount_status {
+  ACTIVE
+  SUSPENDED
+  DISABLED
+  INVITED
+}
+
+enum customer_status {
+  ACTIVE
+  INACTIVE
+}
+
+enum quotation_tradeTerm {
+  FOB
+  CIF
+  CNF
+  EXW
+  DDP
+  DAP
+  FCA
+  OTHER
+}
+
+enum shipmentrequest_serviceScope {
+  PORT_TO_PORT
+  DOOR_TO_PORT
+  PORT_TO_DOOR
+  DOOR_TO_DOOR
+}
+
+enum vendorbill_currency {
+  BDT
+  USD
+  EUR
+  GBP
+  CNY
+  INR
+  AED
+  RUB
+  OTHER
+}
+
+enum invoice_currency {
+  BDT
+  USD
+  EUR
+  GBP
+  CNY
+  INR
+  AED
+  RUB
+  OTHER
+}
+
+enum shipmentrequest_loadType {
+  FCL
+  LCL
+  AIR_CARGO
+  TRUCK
+}
+
+enum shipmentworkflowtemplatestep_defaultVisibility {
+  INTERNAL_ONLY
+  CUSTOMER_VISIBLE
+}
+
+enum user_status {
+  ACTIVE
+  INVITED
+  SUSPENDED
+}
+
+enum vendor_status {
+  ACTIVE
+  INACTIVE
+}
+
+enum communicationaccount_status {
+  DISCONNECTED
+  CONNECTING
+  CONNECTED
+  FAILED
+  DISABLED
+}
+
+enum company_deploymentType {
+  CLOUD
+  SELF_HOSTED
+}
+
+enum payment_paymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  MOBILE_BANKING
+  CARD
+  OTHER
+}
+
+enum shipmentworkflowstep_visibility {
+  INTERNAL_ONLY
+  CUSTOMER_VISIBLE
+}
+
+enum company_planType {
+  TRIAL
+  MONTHLY
+  YEARLY
+  LIFETIME_CLOUD
+  SELF_HOSTED
+}
+
+enum container_demurrageRiskStatus {
+  SAFE
+  WARNING
+  CRITICAL
+  NOT_APPLICABLE
+}
+
+enum freightdocument_handlingMode {
+  GENERATE_IN_SYSTEM
+  RECORD_AND_UPLOAD
+  UPLOAD_ONLY
+  TRACK_ONLY
+}
+
+enum shipmentworkflowstep_status {
+  NOT_STARTED
+  IN_PROGRESS
+  WAITING
+  COMPLETED
+  BLOCKED
+  CANCELLED
+}
+
+enum freightdocument_responsibility {
+  FORWARDER_GENERATED
+  CARRIER_ISSUED
+  AIRLINE_ISSUED
+  SHIPPER_PROVIDED
+  CUSTOMER_PROVIDED
+  CUSTOMS_BROKER_PROVIDED
+  AUTHORITY_ISSUED
+  VENDOR_AGENT_ISSUED
+  INTERNAL_FINANCE
+}
+
+enum payment_currency {
+  BDT
+  USD
+  EUR
+  GBP
+  CNY
+  INR
+  AED
+  RUB
+  OTHER
+}
+
+enum shipmentworkflowstep_handlerType {
+  INTERNAL_EMPLOYEE
+  EXTERNAL_AGENT
+  VENDOR
+  CF_AGENT
+  TRUCK_PROVIDER
+  DESTINATION_AGENT
+}
+
+enum user_scope {
+  PLATFORM
+  COMPANY
+  CLIENT
+}
+
+enum billoflading_releaseType {
+  ORIGINAL_BL
+  SURRENDER_BL
+  TELEX_RELEASE
+  SEAWAY_BILL
+  AWB_RELEASE
+  NOT_APPLICABLE
+}
+
+enum freightdocument_visibility {
+  INTERNAL_ONLY
+  CLIENT_SAFE
+  RESTRICTED
+}
+
+enum billoflading_releaseStatus {
+  PENDING
+  REQUESTED
+  CONFIRMED
+  RELEASED
+  HOLD
+  CANCELLED
+}
+
+enum carrierproposal_status {
+  RECEIVED
+  UNDER_REVIEW
+  SELECTED
+  REJECTED
+  EXPIRED
+}
+
+enum company_subscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  EXPIRED
+  CANCELLED
+}
+
+enum carrierquery_status {
+  DRAFT
+  SENT
+  PROPOSAL_RECEIVED
+  SELECTED
+  REJECTED
+  CANCELLED
+}
+
+enum quotation_status {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+enum shipmentrequest_incoterm {
+  FOB
+  CIF
+  CNF
+  EXW
+  DDP
+  DAP
+  FCA
+  OTHER
+}
+
+enum shippinginstruction_freightTerm {
+  PREPAID
+  COLLECT
+}
+
+enum shippinginstruction_releasePreference {
+  ORIGINAL_BL
+  SURRENDER_BL
+  TELEX_RELEASE
+  SEAWAY_BILL
+  AWB_RELEASE
+  NOT_APPLICABLE
+}
+
+enum shipmentjob_serviceScope {
+  PORT_TO_PORT
+  DOOR_TO_PORT
+  PORT_TO_DOOR
+  DOOR_TO_DOOR
+}
+
+enum shipmentjob_financeCloseStatus {
+  OPEN
+  CLOSE_READY
+  LOCKED
+}
+
+enum importjob_entityType {
+  CUSTOMER
+  VENDOR
+}
+
+enum importjob_status {
+  UPLOADED
+  VALIDATED
+  COMMITTING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum importjob_duplicatePolicy {
+  REJECT
+  SKIP
+  UPDATE
+}
+
+enum taskrecurrence_frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}

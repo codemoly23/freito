@@ -1,0 +1,3 @@
+This is a sample document for Playwright E2E testing.
+Created by Gemini CLI.
+QA Timestamp: 2026-06-18
