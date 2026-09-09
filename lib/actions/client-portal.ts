@@ -434,7 +434,7 @@ export async function changeClientPortalPassword(
 
   await audit({
     companyId: account.companyId,
-    actorId: account.id,
+    actorId: null,
     action: "CLIENT_PORTAL_PASSWORD_CHANGED",
     entityType: "ClientPortalAccount",
     entityId: account.id,

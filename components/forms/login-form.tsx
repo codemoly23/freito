@@ -105,7 +105,7 @@ export function LoginForm({
           id="email"
           type="email"
           autoComplete="email"
-          placeholder="admin@freightcontrol.local"
+          placeholder="admin@freightfast-demo.codemoly.io"
           {...form.register("email")}
         />
         {form.formState.errors.email ? (
@@ -184,7 +184,7 @@ export function LoginForm({
           </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {loginScope === "PLATFORM" && [
-              { label: "Platform Owner", email: "platform@freightcontrol.com", password: "Admin123" }
+              { label: "Platform Owner", email: "platform@freightcontrol.com", password: "Platform@2026" }
             ].map((cred) => (
               <button
                 key={cred.email}
@@ -232,11 +232,11 @@ export function LoginForm({
             ))}
 
             {loginScope === "COMPANY" && [
-              { label: "Company Admin", email: "admin@freightcontrol.com", password: "Admin123" },
-              { label: "Operations Manager", email: "operations@freightcontrol.com", password: "Admin123" },
-              { label: "Documentation Officer", email: "documentation@freightcontrol.com", password: "Admin123" },
-              { label: "Accounts Officer", email: "accounts@freightcontrol.com", password: "Admin123" },
-              { label: "Sales Executive", email: "sales@freightcontrol.com", password: "Admin123" }
+              { label: "Company Admin", email: "admin@freightfast-demo.codemoly.io", password: "FreightFast@2026" },
+              { label: "Operations Manager", email: "operations@freightcontrol.com", password: "Staff@2026" },
+              { label: "Documentation Officer", email: "documentation@freightcontrol.com", password: "Staff@2026" },
+              { label: "Accounts Officer", email: "accounts@freightcontrol.com", password: "Staff@2026" },
+              { label: "Sales Executive", email: "sales@freightcontrol.com", password: "Staff@2026" }
             ].map((cred) => (
               <button
                 key={cred.email}

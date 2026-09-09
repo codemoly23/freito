@@ -95,7 +95,7 @@ export function ClientPortalLoginForm({ companySlug }: { companySlug: string }) 
       {hydrated && (() => {
         const currentYear = new Date().getFullYear();
         const demoClientCode = `DFC-CL-${currentYear}-0001`;
-        const demoPassword = "Admin123";
+        const demoPassword = "Client@2026";
         return (
           <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
             <div className="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">

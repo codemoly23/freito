@@ -8,19 +8,19 @@ _Verified directly against the source code (Prisma schema, server actions, API r
 
 - **Platform Admin Console** — a separate super-admin area (`/platform`, its own login scope) to manage every tenant company: company list/detail, per-company module enable/disable, subscription/plan tracking, and a platform-wide audit log.
   - _Note:_ the console's "Support" page is a static contact/documentation panel, not a ticket system — do not advertise it as one.
-- **Per-Company Module Access Control** — each company can be granted or restricted access to individual modules (Shipments, Documents, Quotations, Costing, Billing, Reports, Tasks, Shipment Operations, Client Portal, WhatsApp Alerts, API Access) independently, enforced server-side at real usage points, not just hidden in the UI.
-  - _Note:_ AI features are gated separately by RBAC + the platform/company AI toggle described below, not by this module list.
+- **Per-Company Module Access Control** — each company can be granted or restricted access to individual modules (Shipments, Documents, Quotations, Costing, Billing, Reports, Tasks, Shipment Operations, Client Portal) independently, enforced server-side at real usage points, not just hidden in the UI.
+  - _Note:_ AI features are gated separately by RBAC + the platform/company AI toggle described below, not by this module list. Two additional toggles exist in the platform admin UI — "WhatsApp Alerts" and "API Access" — but neither is actually checked anywhere in the codebase yet (no enforcement point, and no API-key-authenticated route exists at all); treat these two as admin-console placeholders, not enforced modules.
 - **Subscription Tracking** — company plan type, subscription status, and trial/subscription end dates are manageable from the platform console and enforced.
 - **Multi-Company & Branch Management** — unlimited companies, each with unlimited branches; every operational record (shipments, invoices, quotations, documents, etc.) is scoped to a company and branch, and users only see data for branches they're a member of.
-- **Role-Based Access Control (RBAC)** — granular, per-action permissions (60+ distinct permission keys covering shipments, quotations, invoices, payments, documents, reports, AI, branding, roles, and more), assignable via custom roles per company.
+- **Role-Based Access Control (RBAC)** — granular, per-action permissions (130+ distinct permission keys covering shipments, quotations, invoices, payments, documents, reports, AI, branding, roles, and more), assignable via custom roles per company.
 - **Platform Kill-Switch for AI** — AI features can be globally disabled at the platform level, per-company enabled/disabled, and are gated by RBAC on top of that.
 
 ## 2. Sales, Quotation & CRM
 
-- **Customer Management** — full CRUD for customer records; the customer profile page shows shipment/invoice/quotation counts.
-  - _Note:_ the profile page shows counts, not a scrollable transaction list, on that screen.
-- **Vendor Management** — full CRUD for vendor records (create/edit/deactivate) from a list view.
-  - _Note:_ there is currently no per-vendor detail/profile page with linked bill history.
+- **Customer Management** — create/edit/deactivate customer records from a list view; the customer profile page shows shipment/invoice/quotation counts.
+  - _Note:_ "delete" is a soft-deactivate (status flag + timestamp), not a hard delete, and the profile page shows counts, not a scrollable transaction list.
+- **Vendor Management** — create/edit/deactivate vendor records from a list view.
+  - _Note:_ "delete" is likewise a soft-deactivate, not a hard delete, and there is currently no per-vendor detail/profile page with linked bill history.
 - **Quotation Builder** — itemized freight charges (buy/sell), multi-currency line items, PDF export, and conversion into a shipment.
   - _Note:_ conversion is not a direct one-click action on the quotation itself — it runs through an accepted Shipment Request, which is then converted into the shipment job.
 - **Quotation Approval** — a permission-gated accept/reject status change (`quotations:approve`).
@@ -31,7 +31,8 @@ _Verified directly against the source code (Prisma schema, server actions, API r
 ## 3. Shipment / Freight Operations
 
 - **Advanced Shipment Tracking** — vessel/voyage, ETD/ETA, actual arrival, and separate commercial/document/financial/operations status fields per shipment.
-- **Container Tracking** — per-container gate-in/gate-out dates, free-time, and demurrage-risk tracking.
+- **Container Tracking** — per-container gate-in/gate-out dates, free-time date, and a demurrage-risk status field.
+  - _Note:_ demurrage-risk status is a manually-selected dropdown (Safe/Warning/Critical), not an automatically computed value — it is never derived from the free-time/gate-out dates by any calculation or scheduled job.
 - **Status Timeline** — an append-only, chronological status-event log per shipment (who changed what, and when).
 - **Configurable Shipment Workflows** — staged workflow engine (stages → steps) so operational milestones can be tracked and enforced per shipment type.
 - **Shipment Print & PDF Views** — printable/exportable shipment summary documents.
@@ -40,7 +41,7 @@ _Verified directly against the source code (Prisma schema, server actions, API r
 ## 4. Document Management & Compliance
 
 - **Shipment Document Vault** — centralized, versioned document storage per shipment, backed by real Azure Blob Storage (not local/fake storage), namespaced per company/shipment.
-- **Document Verification Workflow** — upload → pending → verified/rejected states, with uploader/verifier tracking.
+- **Document Verification Workflow** — uploaded → verified/rejected states, with uploader/verifier tracking (a "pending" state also exists but represents a not-yet-uploaded/removed document, not a post-upload review queue).
 - **Document Compliance Engine** — dynamically computes the required-document checklist per shipment and tracks completion percentage.
 - **Custom Document Templates** — branded, versioned templates for Quotations and Invoices with a visual layout editor (section order, hidden sections, custom notes) rendered into real PDFs via PDFKit.
   - _Note:_ HBL/HAWB/Debit Note/Manifest templates support layout customization but reuse the on-screen print view rather than a dedicated standalone PDF generator.
@@ -48,8 +49,8 @@ _Verified directly against the source code (Prisma schema, server actions, API r
 
 ## 5. Finance & Accounting
 
-- **Multi-Currency Support** — quotations, invoices, vendor bills, payments, and cost items each support 8 currencies (BDT/USD/EUR/GBP/CNY/INR/AED/RUB + Other) with a per-line exchange rate.
-  - _Note:_ all figures reconcile back to a fixed base currency (BDT), not a fully free-floating any-to-any ledger.
+- **Multi-Currency Support** — quotations, invoices, vendor bills, payments, and cost items each support 8 currencies (BDT/USD/EUR/GBP/CNY/INR/AED/RUB + Other), reconciled to BDT via an exchange rate.
+  - _Note:_ all figures reconcile back to a fixed base currency (BDT), not a fully free-floating any-to-any ledger. Currency/exchange-rate granularity is per-line only for Quotation Charges and Shipment Cost Items; Invoices, Vendor Bills, and Payments carry a single currency/rate per document (all lines on one invoice or bill share it).
 - **Invoicing** — full invoice lifecycle (draft → sent → paid), PDF generation, print view, and portal visibility for customers.
 - **Vendor Bills** — vendor bill entry, approval-gated status changes above configurable thresholds, and payment tracking.
 - **Approval Workflow System** — configurable threshold-based approval policies (by company/branch) for Vendor Bills and Payments, with a real state machine (pending → approved/rejected) that blocks the underlying status change until a user holding the required role decides it.
@@ -153,3 +154,7 @@ All AI calls are routed through a single gateway (`lib/ai/gateway.ts`) that enfo
 - Per-user notification opt-out has no working control — there is no UI or action for a user to opt out, even though the dispatcher checks for one.
 - Notification "templates" only support active/inactive and auto-send toggles, not editing of the actual message subject/body text.
 - Branding is logo-only (no color/theme), and the logo is applied to the customer portal and PDFs only — not to the main dashboard UI or to transactional emails.
+- The "WhatsApp Alerts" and "API Access" module toggles exist in the platform admin UI but are not wired to any enforcement point — there is no API-key-authenticated route in the codebase at all yet.
+- Container demurrage-risk status is a manually-selected field, not a computed/automated risk calculation.
+- Customer and Vendor "delete" are both soft-deactivations, not hard deletes.
+- Per-line currency/exchange-rate applies to Quotation Charges and Shipment Cost Items only; Invoices, Vendor Bills, and Payments use a single document-level currency/rate.

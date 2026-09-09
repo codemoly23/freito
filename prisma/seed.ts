@@ -1006,7 +1006,7 @@ async function main() {
       },
     }));
 
-  const demoClientPassword = process.env.SEED_CLIENT_PASSWORD ?? "Admin123";
+  const demoClientPassword = process.env.SEED_CLIENT_PASSWORD ?? "Client@2026";
   const demoClientPasswordHash = await bcrypt.hash(demoClientPassword, 12);
   const year = new Date().getFullYear();
   const demoClientCode = `DFC-CL-${year}-0001`;

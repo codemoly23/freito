@@ -55,7 +55,7 @@ export function ForgotPasswordForm() {
           id="email"
           type="email"
           autoComplete="email"
-          placeholder="admin@freightcontrol.local"
+          placeholder="admin@freightfast-demo.codemoly.io"
           {...form.register("email")}
         />
         {form.formState.errors.email ? (
