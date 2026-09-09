@@ -161,7 +161,7 @@ export function SplashScreen({ showTagline = true }: SplashScreenProps) {
             <div className="relative w-[280px] h-[58px] sm:w-[360px] sm:h-[75px]">
               <Image
                 src="/images/freito-logo.png"
-                alt="Freito"
+                alt="FreightFast"
                 fill
                 priority
                 className="object-contain"
@@ -187,7 +187,7 @@ export function SplashScreen({ showTagline = true }: SplashScreenProps) {
               <div className="relative w-full h-full opacity-0 animate-logo-entrance">
                 <Image
                   src="/images/freito-logo.png"
-                  alt="Freito Logo"
+                  alt="FreightFast Logo"
                   fill
                   priority
                   className="object-contain"

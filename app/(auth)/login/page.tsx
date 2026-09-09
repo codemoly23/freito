@@ -39,7 +39,7 @@ function resolveLoginContext(host: string | null) {
   return {
     scope: "COMPANY" as const,
     callbackUrl: "/dashboard",
-    title: "Sign in to Freito",
+    title: "Sign in to FreightFast",
     description: "Manage shipment jobs, documents, tasks, billing, and operational follow-up from one secure workspace.",
     companyHost,
   };
@@ -62,7 +62,7 @@ export default async function LoginPage() {
             <div className="relative mb-4 h-8 w-32">
               <Image
                 src="/images/freito-logo.png"
-                alt="Freito"
+                alt="FreightFast"
                 fill
                 priority
                 className="object-contain object-left"
@@ -82,7 +82,7 @@ export default async function LoginPage() {
       </section>
 
       <section
-        aria-label="Freito System hero"
+        aria-label="FreightFast System hero"
         className="hidden min-h-screen bg-slate-950 lg:block"
         style={{
           backgroundImage: "url('/images/login-freight-hero.png')",
@@ -91,7 +91,7 @@ export default async function LoginPage() {
         }}
       >
         <span className="sr-only">
-          Welcome to Freito System. Smarter freight forwarding, faster
+          Welcome to FreightFast System. Smarter freight forwarding, faster
           operations, full control.
         </span>
       </section>

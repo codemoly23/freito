@@ -52,7 +52,7 @@ export default async function ResetPasswordPage({
       </section>
 
       <section
-        aria-label="Freito System hero"
+        aria-label="FreightFast System hero"
         className="hidden min-h-screen bg-slate-950 lg:block"
         style={{
           backgroundImage: "url('/images/login-freight-hero.png')",
@@ -61,7 +61,7 @@ export default async function ResetPasswordPage({
         }}
       >
         <span className="sr-only">
-          Welcome to Freito System. Smarter freight forwarding, faster
+          Welcome to FreightFast System. Smarter freight forwarding, faster
           operations, full control.
         </span>
       </section>

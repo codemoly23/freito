@@ -66,7 +66,7 @@ export const emailSmtpProvider: CommunicationProviderAdapter<EmailSmtpConfig> = 
           : safeHeader(config.fromEmail, "Sender email"),
         to: input.recipientEmail ? safeHeader(input.recipientEmail, "Recipient email") : config.fromEmail,
         bcc: input.bcc?.map((addr) => safeHeader(addr, "BCC email")),
-        subject: safeHeader(input.subject ?? "Freito notification", "Subject"),
+        subject: safeHeader(input.subject ?? "FreightFast notification", "Subject"),
         text: input.messageBody,
         html: input.htmlBody ?? undefined,
         disableFileAccess: true,

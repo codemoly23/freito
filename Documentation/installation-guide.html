@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreightFast Installation Guide</title>
+<meta name="description" content="Step-by-step installation guide for FreightFast — requirements, setup, environment variables, default accounts, background jobs, deployment, and troubleshooting.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Archivo+Expanded:wght@600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F7F8;
+  --surface: #FFFFFF;
+  --surface-2: #EDF2F3;
+  --border: #DCE2E4;
+  --border-strong: #C4CFD2;
+  --ink: #16232B;
+  --ink-muted: #5B6B72;
+  --ink-faint: #8A9AA0;
+  --accent: #0E8F9A;
+  --accent-strong: #086974;
+  --accent-soft: #E3F4F5;
+  --accent-ink: #FFFFFF;
+  --good: #1F7A4C;
+  --good-soft: #E5F4EC;
+  --warn: #8A5A00;
+  --warn-soft: #FBF0DA;
+  --code-bg: #0F1B23;
+  --code-ink: #D9E6E9;
+  --code-faint: #7C96A0;
+  --code-accent: #4FD6DE;
+  --shadow: 0 1px 2px rgba(16,35,43,0.06), 0 8px 24px -12px rgba(16,35,43,0.12);
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A131A;
+    --surface: #101B23;
+    --surface-2: #15232C;
+    --border: #223138;
+    --border-strong: #2E4048;
+    --ink: #E8EEF0;
+    --ink-muted: #93A6AC;
+    --ink-faint: #64767C;
+    --accent: #3FCAD3;
+    --accent-strong: #6EDDE4;
+    --accent-soft: #142B2E;
+    --accent-ink: #06222A;
+    --good: #4FCC8A;
+    --good-soft: #12271E;
+    --warn: #E3B23D;
+    --warn-soft: #2A2110;
+    --code-bg: #0A1319;
+    --code-ink: #D9E6E9;
+    --code-faint: #6E8891;
+    --code-accent: #4FD6DE;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0A131A;
+  --surface: #101B23;
+  --surface-2: #15232C;
+  --border: #223138;
+  --border-strong: #2E4048;
+  --ink: #E8EEF0;
+  --ink-muted: #93A6AC;
+  --ink-faint: #64767C;
+  --accent: #3FCAD3;
+  --accent-strong: #6EDDE4;
+  --accent-soft: #142B2E;
+  --accent-ink: #06222A;
+  --good: #4FCC8A;
+  --good-soft: #12271E;
+  --warn: #E3B23D;
+  --warn-soft: #2A2110;
+  --code-bg: #0A1319;
+  --code-ink: #D9E6E9;
+  --code-faint: #6E8891;
+  --code-accent: #4FD6DE;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.5);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Public Sans", -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: "Archivo", "Public Sans", sans-serif; font-weight: 700; color: var(--ink); text-wrap: balance; margin: 0; }
+
+.eyebrow {
+  font-family: "Archivo Expanded", "Archivo", sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+code, .mono, .env-name, td.mono, th.mono {
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+a { color: var(--accent-strong); }
+
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: linear-gradient(155deg, var(--accent), var(--accent-strong));
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.brand-mark svg { width: 17px; height: 17px; }
+.brand-name { font-family: "Archivo"; font-weight: 800; font-size: 1.05rem; letter-spacing: -0.01em; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { color: var(--ink-muted); font-size: 0.8rem; }
+.topbar-meta { display: flex; align-items: center; gap: 10px; }
+.badge {
+  font-family: "IBM Plex Mono";
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.badge.accent { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
+:root[data-theme="dark"] .badge.accent { color: var(--accent-strong); }
+
+/* ---------- Doc switcher tabs ---------- */
+.doc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 28px 0;
+}
+.doc-tabs a {
+  font-family: "Archivo Expanded";
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink-muted);
+  padding: 8px 14px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid transparent;
+}
+.doc-tabs a:hover { color: var(--ink); }
+.doc-tabs a.active {
+  color: var(--accent-strong);
+  background: var(--surface);
+  border-color: var(--border);
+  border-bottom-color: var(--surface);
+  margin-bottom: -1px;
+}
+
+/* ---------- Shell ---------- */
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  gap: 48px;
+  padding: 36px 28px 96px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 880px) {
+  .shell { grid-template-columns: 1fr; padding: 20px 18px 72px; gap: 22px; }
+  .toc-desktop { display: none; }
+}
+
+nav.toc-desktop {
+  position: sticky;
+  top: 68px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.toc-group + .toc-group { margin-top: 18px; }
+.toc-group-label {
+  font-family: "Archivo Expanded"; font-size: 0.66rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; display: block;
+}
+nav.toc-desktop ul { list-style: none; margin: 0; padding: 0; }
+nav.toc-desktop a {
+  display: block;
+  padding: 5px 0 5px 12px;
+  border-left: 2px solid var(--border);
+  color: var(--ink-muted);
+  text-decoration: none;
+  font-size: 0.86rem;
+  transition: border-color .15s, color .15s;
+}
+nav.toc-desktop a:hover { color: var(--ink); }
+nav.toc-desktop a.active { color: var(--accent-strong); border-left-color: var(--accent); font-weight: 600; }
+
+.toc-mobile { display: none; margin-bottom: 28px; }
+@media (max-width: 880px) { .toc-mobile { display: block; } }
+.toc-mobile summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: "Archivo"; font-weight: 600; font-size: 0.9rem;
+}
+.toc-mobile summary::-webkit-details-marker { display: none; }
+.toc-mobile[open] summary { border-radius: var(--radius) var(--radius) 0 0; }
+.toc-mobile-body { border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 10px 16px 16px; background: var(--surface); }
+.toc-mobile-body a { display: block; padding: 6px 0; color: var(--ink-muted); text-decoration: none; font-size: 0.88rem; }
+
+main { min-width: 0; }
+
+/* ---------- Hero / intro ---------- */
+.intro {
+  padding-bottom: 28px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--border);
+}
+.intro h1 { font-size: clamp(1.9rem, 3vw, 2.5rem); line-height: 1.12; margin-top: 10px; }
+.intro p.lede { max-width: 62ch; color: var(--ink-muted); font-size: 1.05rem; margin-top: 14px; }
+.quickfacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 24px;
+}
+.quickfact { background: var(--surface); padding: 12px 16px; }
+.quickfact .label { font-family: "Archivo Expanded"; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.quickfact .value { font-family: "IBM Plex Mono"; font-size: 0.88rem; margin-top: 4px; color: var(--ink); }
+
+/* ---------- Sections ---------- */
+section { margin-bottom: 56px; scroll-margin-top: 80px; }
+section .eyebrow { display: block; margin-bottom: 8px; }
+section h2 { font-size: 1.5rem; }
+section > p.section-dek { color: var(--ink-muted); max-width: 68ch; margin-top: 10px; }
+h3 { font-size: 1.08rem; margin-top: 30px; margin-bottom: 12px; }
+h3.first { margin-top: 22px; }
+p { max-width: 72ch; }
+.prose p + p { margin-top: 12px; }
+
+/* ---------- Feature grid ---------- */
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-top: 20px; }
+.feature-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 18px; box-shadow: var(--shadow);
+}
+.feature-card h4 { font-size: 0.92rem; font-weight: 700; }
+.feature-card p { font-size: 0.85rem; color: var(--ink-muted); margin-top: 6px; }
+
+.ai-table-wrap { overflow-x: auto; margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+table caption { text-align: left; padding: 10px 16px; font-family: "Archivo"; font-weight: 700; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+thead th { background: var(--surface-2); font-family: "Archivo Expanded"; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+td.mono, .env-name { color: var(--accent-strong); font-size: 0.82rem; white-space: nowrap; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; font-family: "IBM Plex Mono"; }
+.pill.req { background: var(--warn-soft); color: var(--warn); }
+.pill.opt { background: var(--good-soft); color: var(--good); }
+
+/* ---------- Steps ---------- */
+.steps { counter-reset: step; margin-top: 22px; display: flex; flex-direction: column; gap: 0; }
+.step {
+  counter-increment: step;
+  position: relative;
+  padding: 0 0 28px 46px;
+  border-left: 2px solid var(--border);
+  margin-left: 15px;
+}
+.step:last-child { border-left-color: transparent; padding-bottom: 4px; }
+.step::before {
+  content: counter(step);
+  position: absolute; left: -17px; top: 0;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--accent);
+  color: var(--accent-strong);
+  display: flex; align-items: center; justify-content: center;
+  font-family: "IBM Plex Mono"; font-weight: 600; font-size: 0.85rem;
+}
+.step h4 { font-size: 1rem; margin-bottom: 6px; padding-top: 4px; }
+.step p { color: var(--ink-muted); font-size: 0.92rem; }
+.step p + p { margin-top: 8px; }
+
+/* ---------- Code blocks ---------- */
+pre {
+  margin: 12px 0 0;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: "IBM Plex Mono";
+  font-size: 0.82rem;
+  line-height: 1.65;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+code.inline {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 0.86em;
+  color: var(--accent-strong);
+}
+
+/* ---------- Callouts ---------- */
+.callout {
+  display: flex; gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-top: 16px;
+  font-size: 0.9rem;
+}
+.callout .icon { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
+.callout.note { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); background: var(--accent-soft); }
+.callout.note .icon { color: var(--accent-strong); }
+.callout.warn { border-color: color-mix(in srgb, var(--warn) 35%, var(--border)); background: var(--warn-soft); }
+.callout.warn .icon { color: var(--warn); }
+.callout p { color: var(--ink); margin: 0; }
+.callout strong { font-family: "Archivo"; }
+
+/* ---------- Credential cards ---------- */
+.cred-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 18px; }
+.cred-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.cred-role { font-family: "Archivo"; font-weight: 700; font-size: 0.88rem; }
+.cred-line { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; font-family: "IBM Plex Mono"; font-size: 0.8rem; }
+.cred-line .k { color: var(--ink-faint); }
+.cred-line .v { color: var(--ink); }
+
+/* ---------- FAQ ---------- */
+details.faq { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); margin-top: 10px; overflow: hidden; }
+details.faq summary {
+  cursor: pointer; list-style: none; padding: 14px 16px; font-family: "Archivo"; font-weight: 600; font-size: 0.94rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+details.faq summary::-webkit-details-marker { display: none; }
+details.faq summary .chev { transition: transform .18s ease; flex-shrink: 0; color: var(--ink-faint); }
+details.faq[open] summary .chev { transform: rotate(45deg); }
+details.faq .faq-body { padding: 0 16px 16px; color: var(--ink-muted); font-size: 0.9rem; max-width: 68ch; }
+details.faq .faq-body p + p { margin-top: 8px; }
+
+footer.page-footer {
+  max-width: 1180px; margin: 0 auto; padding: 0 28px 60px;
+  display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: baseline; justify-content: space-between;
+  color: var(--ink-faint); font-size: 0.82rem; border-top: 1px solid var(--border); padding-top: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 15L9 9L13 13L21 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 5H21V11" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="brand-name">FreightFast</div>
+  </div>
+  <div class="topbar-meta">
+    <span class="badge">Next.js 16.2.9</span>
+    <span class="badge accent">v0.1.0</span>
+  </div>
+</div>
+<nav class="doc-tabs" aria-label="Document switcher">
+  <a href="documentation.html">Documentation</a>
+  <a href="installation-guide.html" class="active">Installation Guide</a>
+  <a href="hosting-requirements.html">Hosting Requirements</a>
+  <a href="third-party-services.html">Third-Party Services</a>
+</nav>
+
+<div class="shell">
+  <nav class="toc-desktop" aria-label="Table of contents">
+    <div class="toc-group">
+      <span class="toc-group-label">Setup</span>
+      <ul>
+        <li><a href="#requirements">Requirements</a></li>
+        <li><a href="#installation">Installation</a></li>
+        <li><a href="#environment-variables">Environment variables</a></li>
+        <li><a href="#default-accounts">Default accounts</a></li>
+      </ul>
+    </div>
+    <div class="toc-group">
+      <span class="toc-group-label">Running it</span>
+      <ul>
+        <li><a href="#cron-jobs">Background jobs</a></li>
+        <li><a href="#deployment">Deployment</a></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <details class="toc-mobile">
+      <summary>Contents<span class="chev">▾</span></summary>
+      <div class="toc-mobile-body">
+        <a href="#requirements">Requirements</a>
+        <a href="#installation">Installation</a>
+        <a href="#environment-variables">Environment variables</a>
+        <a href="#default-accounts">Default accounts</a>
+        <a href="#cron-jobs">Background jobs</a>
+        <a href="#deployment">Deployment</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+      </div>
+    </details>
+
+    <div class="intro">
+      <span class="eyebrow">Setup, start to finish</span>
+      <h1>Installation guide</h1>
+      <p class="lede">Everything needed to get FreightFast running from a fresh copy of the source — requirements, setup steps, configuration, and the fixes for the handful of things that most commonly trip people up. For what the product actually does, see the <a href="documentation.html">Documentation</a>.</p>
+    </div>
+
+    <section id="requirements">
+      <span class="eyebrow">01 — Before you start</span>
+      <h2>Requirements</h2>
+      <div class="ai-table-wrap">
+        <table>
+          <thead><tr><th>Component</th><th>Version</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>Node.js</td><td class="mono">20.x or newer</td><td><span class="pill req">required</span></td></tr>
+            <tr><td>npm</td><td class="mono">10.x or newer</td><td><span class="pill req">required</span></td></tr>
+            <tr><td>MySQL or MariaDB</td><td class="mono">8.0 / 10.6+</td><td><span class="pill req">required</span></td></tr>
+            <tr><td>Git</td><td class="mono">any recent</td><td><span class="pill opt">recommended</span></td></tr>
+            <tr><td>Azure Blob Storage account</td><td class="mono">—</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td>SMTP / WhatsApp Cloud API / SMS gateway</td><td class="mono">—</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td>Google AI Studio API key</td><td class="mono">for Gemini</td><td><span class="pill opt">optional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:14px; color:var(--ink-muted); font-size:0.88rem;">Document uploads, SMTP/WhatsApp/SMS delivery, and AI features all work without their optional credentials configured — the app runs with those subsystems simply switched off until you supply keys.</p>
+    </section>
+
+    <section id="installation">
+      <span class="eyebrow">02 — Setup</span>
+      <h2>Installation</h2>
+      <p class="section-dek">Seven steps from a fresh copy of the source to a running app with demo data loaded.</p>
+
+      <div class="steps">
+        <div class="step">
+          <h4>Install dependencies</h4>
+          <p>From the project root:</p>
+          <pre>npm install</pre>
+        </div>
+
+        <div class="step">
+          <h4>Create the database</h4>
+          <p>Create an empty MySQL/MariaDB database for the app. Using the MySQL CLI:</p>
+          <pre>mysql -u root -p -e "CREATE DATABASE freight_control CHARACTER SET utf8mb4;"</pre>
+        </div>
+
+        <div class="step">
+          <h4>Configure environment variables</h4>
+          <p>Copy the example file and fill in your own values:</p>
+          <pre>cp .env.example .env</pre>
+          <p>At minimum, set <code class="inline">DATABASE_URL</code> to point at the database from step 2, and generate a random <code class="inline">NEXTAUTH_SECRET</code>. See <a href="#environment-variables">Environment variables</a> for the full list.</p>
+          <pre># macOS / Linux
+openssl rand -hex 32
+
+# Windows PowerShell
+[Convert]::ToHexString((1..32 | %{ Get-Random -Max 256 }))</pre>
+        </div>
+
+        <div class="step">
+          <h4>Generate the Prisma client</h4>
+          <pre>npx prisma generate</pre>
+        </div>
+
+        <div class="step">
+          <h4>Push the schema</h4>
+          <p>Creates every table in the database from <code class="inline">prisma/schema.prisma</code>:</p>
+          <pre>npx prisma db push</pre>
+        </div>
+
+        <div class="step">
+          <h4>Seed initial data</h4>
+          <p>Creates the platform owner, a demo company, its default roles, and a set of demo staff accounts:</p>
+          <pre>npx prisma db seed</pre>
+          <p>Credentials for every account it creates are listed under <a href="#default-accounts">Default accounts</a>.</p>
+        </div>
+
+        <div class="step">
+          <h4>Start the app</h4>
+          <p>For local development, with hot reload:</p>
+          <pre>npm run dev</pre>
+          <p>Then open <code class="inline">http://localhost:3000</code>. If port 3000 is already in use, Next.js picks the next free port automatically and prints it in the terminal — watch the startup output for the actual URL.</p>
+        </div>
+      </div>
+
+      <div class="callout note">
+        <svg class="icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v4.2M10 6.8v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <p><strong>Upgrading an existing install?</strong> Re-run <code class="inline">npx prisma db push</code> (or apply the migrations under <code class="inline">prisma/migrations/</code> in order) after pulling new code, then restart the app server. New tables and columns are additive and nullable by default, so existing data keeps working unchanged.</p>
+      </div>
+    </section>
+
+    <section id="environment-variables">
+      <span class="eyebrow">03 — Configuration reference</span>
+      <h2>Environment variables</h2>
+      <p class="section-dek">Grouped by subsystem. Anything marked optional can be left blank — that feature stays switched off rather than erroring.</p>
+
+      <div class="ai-table-wrap">
+        <table>
+          <caption>Database &amp; auth</caption>
+          <thead><tr><th>Variable</th><th>Purpose</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="env-name">DATABASE_URL</td><td>MySQL connection string, e.g. <span class="mono">mysql://user:pass@localhost:3306/freight_control</span></td><td><span class="pill req">required</span></td></tr>
+            <tr><td class="env-name">NEXTAUTH_URL</td><td>Public base URL of the app, e.g. <span class="mono">http://localhost:3000</span></td><td><span class="pill req">required</span></td></tr>
+            <tr><td class="env-name">NEXTAUTH_SECRET</td><td>Random secret used to sign session tokens. Changing it invalidates all existing sessions.</td><td><span class="pill req">required</span></td></tr>
+            <tr><td class="env-name">ADMIN_APP_HOST</td><td>Hostname routed to the platform console. Defaults to a placeholder if unset.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">COMPANY_APP_HOST</td><td>Hostname routed to the company dashboard.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">PORTAL_APP_HOST</td><td>Hostname routed to the client portal.</td><td><span class="pill opt">optional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ai-table-wrap" style="margin-top:16px;">
+        <table>
+          <caption>Seed data</caption>
+          <thead><tr><th>Variable</th><th>Purpose</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="env-name">SEED_ADMIN_NAME</td><td>Display name for the seeded company admin.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">SEED_ADMIN_EMAIL</td><td>Login email for the seeded company admin. Falls back to <span class="mono">admin@freightcontrol.com</span>.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">SEED_ADMIN_PASSWORD</td><td>Password for every seeded staff account. Falls back to <span class="mono">Admin123</span>.</td><td><span class="pill opt">optional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ai-table-wrap" style="margin-top:16px;">
+        <table>
+          <caption>File storage</caption>
+          <thead><tr><th>Variable</th><th>Purpose</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="env-name">AZURE_STORAGE_CONNECTION_STRING</td><td>Connection string from Azure Portal → Storage Account → Access keys.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">AZURE_STORAGE_CONTAINER_NAME</td><td>Blob container for uploaded documents.</td><td><span class="pill opt">optional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ai-table-wrap" style="margin-top:16px;">
+        <table>
+          <caption>Delivery channels — email, WhatsApp, SMS</caption>
+          <thead><tr><th>Variable</th><th>Purpose</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="env-name">EMAIL_DELIVERY_ENABLED</td><td>Master switch for outbound email.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">SMTP_HOST / PORT / USER / PASS</td><td>Your SMTP relay credentials.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">SMTP_FROM_EMAIL / SMTP_FROM_NAME / SMTP_SECURE</td><td>From-address, display name, and TLS mode.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">WHATSAPP_DELIVERY_ENABLED</td><td>Master switch for WhatsApp delivery.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">WHATSAPP_CLOUD_API_TOKEN / PHONE_NUMBER_ID</td><td>Meta WhatsApp Cloud API credentials.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">SMS_DELIVERY_ENABLED / PROVIDER / API_KEY / SENDER_ID</td><td>SMS gateway configuration.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">DELIVERY_DRY_RUN</td><td>When <span class="mono">true</span>, logs deliveries instead of sending them. On by default.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">COMMUNICATION_SECRET_KEY</td><td>Encrypts stored provider credentials. Required before any real (non-dry-run) send.</td><td><span class="pill opt">optional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ai-table-wrap" style="margin-top:16px;">
+        <table>
+          <caption>Background job endpoints</caption>
+          <thead><tr><th>Variable</th><th>Purpose</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="env-name">NOTIFICATION_DISPATCH_SECRET</td><td>Bearer secret for the notification cron endpoint. Endpoint stays closed until set.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">RECURRING_TASK_DISPATCH_SECRET</td><td>Bearer secret for the recurring-task cron endpoint. Endpoint stays closed until set.</td><td><span class="pill opt">optional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ai-table-wrap" style="margin-top:16px;">
+        <table>
+          <caption>AI features</caption>
+          <thead><tr><th>Variable</th><th>Purpose</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="env-name">AI_ENABLED</td><td>Platform-wide kill-switch. Must be <span class="mono">true</span> for any company to use AI tools.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">AI_PROVIDER</td><td>Currently <span class="mono">GEMINI</span> — the only wired provider.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">GOOGLE_GENERATIVE_AI_API_KEY</td><td>Platform-level Gemini key, used when a company hasn't saved its own.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">AI_DEFAULT_DAILY_REQUEST_CAP</td><td>Default per-company daily request quota.</td><td><span class="pill opt">optional</span></td></tr>
+            <tr><td class="env-name">AI_SECRET_KEY</td><td>Encrypts a company's own saved Gemini API key.</td><td><span class="pill opt">optional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="default-accounts">
+      <span class="eyebrow">04 — After seeding</span>
+      <h2>Default accounts</h2>
+      <p class="section-dek">Running <code class="inline">npx prisma db seed</code> creates one platform-level account and six accounts inside a demo company. Every password below is the value of <code class="inline">SEED_ADMIN_PASSWORD</code> — <span class="mono">Admin123</span> if you left it unset.</p>
+
+      <h3 class="first">Platform console — <span class="mono" style="font-size:0.85em; color:var(--ink-muted);">/platform-login</span></h3>
+      <div class="cred-grid">
+        <div class="cred-card">
+          <div class="cred-role">Platform Owner</div>
+          <div class="cred-line"><span class="k">email</span><span class="v">platform@freightcontrol.com</span></div>
+          <div class="cred-line"><span class="k">password</span><span class="v">SEED_ADMIN_PASSWORD</span></div>
+        </div>
+      </div>
+
+      <h3>Company dashboard — <span class="mono" style="font-size:0.85em; color:var(--ink-muted);">/login</span></h3>
+      <div class="cred-grid">
+        <div class="cred-card">
+          <div class="cred-role">Company Admin</div>
+          <div class="cred-line"><span class="k">email</span><span class="v">SEED_ADMIN_EMAIL</span></div>
+          <div class="cred-line"><span class="k">password</span><span class="v">SEED_ADMIN_PASSWORD</span></div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-role">Operations Manager</div>
+          <div class="cred-line"><span class="k">email</span><span class="v">operations@freightcontrol.com</span></div>
+          <div class="cred-line"><span class="k">password</span><span class="v">SEED_ADMIN_PASSWORD</span></div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-role">Documentation Officer</div>
+          <div class="cred-line"><span class="k">email</span><span class="v">documentation@freightcontrol.com</span></div>
+          <div class="cred-line"><span class="k">password</span><span class="v">SEED_ADMIN_PASSWORD</span></div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-role">Accounts Officer</div>
+          <div class="cred-line"><span class="k">email</span><span class="v">accounts@freightcontrol.com</span></div>
+          <div class="cred-line"><span class="k">password</span><span class="v">SEED_ADMIN_PASSWORD</span></div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-role">Sales Executive</div>
+          <div class="cred-line"><span class="k">email</span><span class="v">sales@freightcontrol.com</span></div>
+          <div class="cred-line"><span class="k">password</span><span class="v">SEED_ADMIN_PASSWORD</span></div>
+        </div>
+      </div>
+
+      <h3>Client portal — <span class="mono" style="font-size:0.85em; color:var(--ink-muted);">/portal/demo-freight/login</span></h3>
+      <p style="font-size:0.9rem; color:var(--ink-muted); margin-top:-4px;">A demo client account is seeded with a masked client code and a forced password change on first login. Retrieve its current login link and code from <span class="mono">Dashboard → Customers → (demo customer) → Portal Access</span> after seeding.</p>
+
+      <div class="callout warn">
+        <svg class="icon" viewBox="0 0 20 20" fill="none"><path d="M10 3l8 14H2l8-14z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8.5v3.2M10 14v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <p>Rotate every seeded password before exposing an installation beyond your own machine. These accounts exist to get you into the app quickly, not for production use as-is.</p>
+      </div>
+    </section>
+
+    <section id="cron-jobs">
+      <span class="eyebrow">05 — Optional</span>
+      <h2>Background jobs</h2>
+      <p class="section-dek">Two features rely on an external scheduler hitting a protected endpoint. Both stay inert — the app works fine without them — until you set their secret.</p>
+
+      <h3 class="first">Notification dispatch</h3>
+      <p>Sends approved, queued email/WhatsApp/SMS notifications. In-app notifications work regardless; this only governs <em>external</em> delivery.</p>
+      <pre>*/5 * * * * curl -fsS -X POST \
+  -H "x-dispatch-secret: $NOTIFICATION_DISPATCH_SECRET" \
+  https://your-domain.example/api/cron/notification-dispatch</pre>
+      <p style="font-size:0.88rem; color:var(--ink-muted);">Failed sends back off at 5min → 20min → 1hr → 4hr, up to five attempts, before landing in the Delivery Outbox for manual retry.</p>
+
+      <h3>Recurring tasks</h3>
+      <p>Generates due occurrences from recurring task templates. An hourly interval covers daily/weekly/monthly rules comfortably.</p>
+      <pre>0 * * * * curl -fsS -X POST \
+  -H "x-dispatch-secret: $RECURRING_TASK_DISPATCH_SECRET" \
+  https://your-domain.example/api/cron/recurring-tasks</pre>
+      <p style="font-size:0.88rem; color:var(--ink-muted);">Without the cron configured, individual recurrences can still be caught up on demand from their detail page using <strong>Run now</strong>.</p>
+    </section>
+
+    <section id="deployment">
+      <span class="eyebrow">06 — Going live</span>
+      <h2>Production deployment</h2>
+      <p class="section-dek">A production build is a standard Next.js build — point it at a real database and a persistent process manager.</p>
+      <pre>npm run build
+npm run start</pre>
+      <div class="prose" style="margin-top:16px;">
+        <p>Before switching real users onto it: generate a fresh <code class="inline">NEXTAUTH_SECRET</code> (don't reuse the one from local development), point <code class="inline">DATABASE_URL</code> at your production database, run the same <code class="inline">prisma generate</code> → <code class="inline">db push</code> sequence against it, and set <code class="inline">NEXTAUTH_URL</code> to the real public URL.</p>
+        <p>The repository includes ready-made GitHub Actions workflows for deploying to an Azure Web App or a self-hosted VPS over SSH — both read their credentials from GitHub repository secrets rather than anything in this codebase, so they need no changes here to use; configure the corresponding secrets in your GitHub repository settings.</p>
+      </div>
+    </section>
+
+    <section id="troubleshooting" style="margin-bottom: 0;">
+      <span class="eyebrow">07 — If something's off</span>
+      <h2>Troubleshooting</h2>
+
+      <details class="faq" open>
+        <summary>Sign-in fails with "JWT_SESSION_ERROR — decryption operation failed"<span class="chev">+</span></summary>
+        <div class="faq-body">
+          <p>This means a session cookie in your browser was encrypted with a different <code class="inline">NEXTAUTH_SECRET</code> than the one currently configured — typically because the secret was regenerated after a previous sign-in.</p>
+          <p>Clear cookies for the app's domain (or open it in a private window) and sign in again.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>MySQL says "Access denied for user"<span class="chev">+</span></summary>
+        <div class="faq-body">
+          <p>The credentials or host in <code class="inline">DATABASE_URL</code> don't match a MySQL user that exists and has access to the target database. Verify the string against what you'd pass to the <code class="inline">mysql</code> CLI, including the host — <span class="mono">127.0.0.1</span> and <span class="mono">localhost</span> can resolve to different auth rules depending on your MySQL configuration.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>The dev server starts on a different port than 3000<span class="chev">+</span></summary>
+        <div class="faq-body">
+          <p>Expected behavior — Next.js checks if 3000 is free and picks the next open port if not. The terminal output from <code class="inline">npm run dev</code> always prints the actual URL in use.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>Prisma throws a validation error mentioning a missing relation<span class="chev">+</span></summary>
+        <div class="faq-body">
+          <p>Usually means the Prisma Client is out of sync with <code class="inline">schema.prisma</code>. Re-run <code class="inline">npx prisma generate</code> after any dependency install or schema change, then restart the dev server.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>Seeding fails on a brand-new database<span class="chev">+</span></summary>
+        <div class="faq-body">
+          <p>The schema has to exist before it can be seeded. Confirm <code class="inline">npx prisma db push</code> completed successfully first — it should report the tables it created — before running <code class="inline">npx prisma db seed</code>.</p>
+        </div>
+      </details>
+    </section>
+  </main>
+</div>
+
+<footer class="page-footer">
+  <span>FreightFast — Freight Forwarding &amp; Logistics ERP</span>
+  <span>Installation guide generated for project submission</span>
+</footer>
+
+<script>
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc-desktop a'));
+    var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    if (!('IntersectionObserver' in window) || !sections.length) return;
+    var byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var link = byId[entry.target.id];
+        if (!link) return;
+        if (entry.isIntersecting) {
+          links.forEach(function (a) { a.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function (s) { observer.observe(s); });
+  })();
+</script>
+</body>
+</html>

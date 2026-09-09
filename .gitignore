@@ -72,3 +72,7 @@ scripts/publish-profile.xml
 scripts/last-ip.txt
 scripts/logs.zip
 scripts/logs_extracted/
+
+# Internal Bengali-language dev planning notes — not for public/buyer visibility
+IMPLEMENTATION_PLAN.md
+AI_IMPLEMENTATION_PLAN.md

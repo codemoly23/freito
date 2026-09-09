@@ -1,6 +1,6 @@
-# Freito - Freight Forwarding & Logistics ERP SaaS Platform
+# FreightFast - Freight Forwarding & Logistics ERP SaaS Platform
 
-**Freito** is an enterprise-grade Freight Forwarding ERP SaaS platform designed to streamline freight forwarding operations, customer inquiries, quotations, shipping job files, document compliance, PDF generators, finance closeouts, and client communication.
+**FreightFast** is an enterprise-grade Freight Forwarding ERP SaaS platform designed to streamline freight forwarding operations, customer inquiries, quotations, shipping job files, document compliance, PDF generators, finance closeouts, and client communication.
 
 ---
 
@@ -145,4 +145,4 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 npm run build
 npm run start
 ```
-# freito
+# freightfast

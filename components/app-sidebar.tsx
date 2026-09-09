@@ -194,7 +194,7 @@ export function AppSidebar({
           <div className="relative h-7 w-28 dark:filter dark:brightness-0 dark:invert">
             <Image
               src="/images/freito-logo.png"
-              alt="Freito"
+              alt="FreightFast"
               fill
               priority
               className="object-contain object-left"
@@ -204,7 +204,7 @@ export function AppSidebar({
           <div className="relative h-8 w-8">
             <Image
               src="/icon.png"
-              alt="Freito"
+              alt="FreightFast"
               fill
               priority
               className="object-contain"
@@ -216,7 +216,7 @@ export function AppSidebar({
         {!isCollapsed && (
           <div className="flex items-center text-slate-300 dark:text-[#94a3b8] pr-1 select-none">
             <svg width="120" height="50" className="hover:text-cyan-500 transition-colors cursor-help">
-              <title>Freito Integrated Workflow (Converging Ops → Entering Freito)</title>
+              <title>FreightFast Integrated Workflow (Converging Ops → Entering FreightFast)</title>
               
               {/* Input Lines (Right side) converging to Hub at X=35 */}
               {/* Top: Air */}
@@ -226,7 +226,7 @@ export function AppSidebar({
               {/* Bottom: Ocean */}
               <path d="M 118,44 C 80,44 60,36 35,26" fill="none" stroke="currentColor" strokeWidth="0.8" strokeDasharray="1.8 1.8" className="opacity-35" />
               
-              {/* Output Line (going left to connect to the Freito logo) */}
+              {/* Output Line (going left to connect to the FreightFast logo) */}
               <path d="M 35,26 L 2,26" fill="none" stroke="#17B8C4" strokeWidth="1.2" className="opacity-70" />
               
               {/* Converging Inputs Particles (moving right to left) */}
@@ -252,7 +252,7 @@ export function AppSidebar({
                 <animateMotion dur="3.8s" repeatCount="indefinite" path="M 118,44 C 80,44 60,36 35,26" rotate="auto" />
               </g>
               
-              {/* Central Hub Node (Freito Core Engine) */}
+              {/* Central Hub Node (FreightFast Core Engine) */}
               <g transform="translate(35, 26)">
                 <circle cx="0" cy="0" r="5" fill="none" stroke="#17B8C4" strokeWidth="1">
                   <animate attributeName="r" values="4;9;4" dur="1.8s" repeatCount="indefinite" />

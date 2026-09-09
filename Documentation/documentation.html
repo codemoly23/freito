@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreightFast Documentation</title>
+<meta name="description" content="Product documentation for FreightFast — what it is, how it's structured, and every feature it ships with.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Archivo+Expanded:wght@600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F7F8;
+  --surface: #FFFFFF;
+  --surface-2: #EDF2F3;
+  --border: #DCE2E4;
+  --border-strong: #C4CFD2;
+  --ink: #16232B;
+  --ink-muted: #5B6B72;
+  --ink-faint: #8A9AA0;
+  --accent: #0E8F9A;
+  --accent-strong: #086974;
+  --accent-soft: #E3F4F5;
+  --accent-ink: #FFFFFF;
+  --good: #1F7A4C;
+  --good-soft: #E5F4EC;
+  --warn: #8A5A00;
+  --warn-soft: #FBF0DA;
+  --code-bg: #0F1B23;
+  --code-ink: #D9E6E9;
+  --code-faint: #7C96A0;
+  --code-accent: #4FD6DE;
+  --shadow: 0 1px 2px rgba(16,35,43,0.06), 0 8px 24px -12px rgba(16,35,43,0.12);
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A131A;
+    --surface: #101B23;
+    --surface-2: #15232C;
+    --border: #223138;
+    --border-strong: #2E4048;
+    --ink: #E8EEF0;
+    --ink-muted: #93A6AC;
+    --ink-faint: #64767C;
+    --accent: #3FCAD3;
+    --accent-strong: #6EDDE4;
+    --accent-soft: #142B2E;
+    --accent-ink: #06222A;
+    --good: #4FCC8A;
+    --good-soft: #12271E;
+    --warn: #E3B23D;
+    --warn-soft: #2A2110;
+    --code-bg: #0A1319;
+    --code-ink: #D9E6E9;
+    --code-faint: #6E8891;
+    --code-accent: #4FD6DE;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0A131A;
+  --surface: #101B23;
+  --surface-2: #15232C;
+  --border: #223138;
+  --border-strong: #2E4048;
+  --ink: #E8EEF0;
+  --ink-muted: #93A6AC;
+  --ink-faint: #64767C;
+  --accent: #3FCAD3;
+  --accent-strong: #6EDDE4;
+  --accent-soft: #142B2E;
+  --accent-ink: #06222A;
+  --good: #4FCC8A;
+  --good-soft: #12271E;
+  --warn: #E3B23D;
+  --warn-soft: #2A2110;
+  --code-bg: #0A1319;
+  --code-ink: #D9E6E9;
+  --code-faint: #6E8891;
+  --code-accent: #4FD6DE;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.5);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Public Sans", -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: "Archivo", "Public Sans", sans-serif; font-weight: 700; color: var(--ink); text-wrap: balance; margin: 0; }
+
+.eyebrow {
+  font-family: "Archivo Expanded", "Archivo", sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+code, .mono, .env-name, td.mono, th.mono {
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+a { color: var(--accent-strong); }
+
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: linear-gradient(155deg, var(--accent), var(--accent-strong));
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.brand-mark svg { width: 17px; height: 17px; }
+.brand-name { font-family: "Archivo"; font-weight: 800; font-size: 1.05rem; letter-spacing: -0.01em; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { color: var(--ink-muted); font-size: 0.8rem; }
+.topbar-meta { display: flex; align-items: center; gap: 10px; }
+.badge {
+  font-family: "IBM Plex Mono";
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.badge.accent { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
+:root[data-theme="dark"] .badge.accent { color: var(--accent-strong); }
+
+/* ---------- Doc switcher tabs ---------- */
+.doc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 28px 0;
+}
+.doc-tabs a {
+  font-family: "Archivo Expanded";
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink-muted);
+  padding: 8px 14px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid transparent;
+}
+.doc-tabs a:hover { color: var(--ink); }
+.doc-tabs a.active {
+  color: var(--accent-strong);
+  background: var(--surface);
+  border-color: var(--border);
+  border-bottom-color: var(--surface);
+  margin-bottom: -1px;
+}
+
+/* ---------- Shell ---------- */
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  gap: 48px;
+  padding: 36px 28px 96px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 880px) {
+  .shell { grid-template-columns: 1fr; padding: 20px 18px 72px; gap: 22px; }
+  .toc-desktop { display: none; }
+}
+
+nav.toc-desktop {
+  position: sticky;
+  top: 68px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.toc-group + .toc-group { margin-top: 18px; }
+.toc-group-label {
+  font-family: "Archivo Expanded"; font-size: 0.66rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; display: block;
+}
+nav.toc-desktop ul { list-style: none; margin: 0; padding: 0; }
+nav.toc-desktop a {
+  display: block;
+  padding: 5px 0 5px 12px;
+  border-left: 2px solid var(--border);
+  color: var(--ink-muted);
+  text-decoration: none;
+  font-size: 0.86rem;
+  transition: border-color .15s, color .15s;
+}
+nav.toc-desktop a:hover { color: var(--ink); }
+nav.toc-desktop a.active { color: var(--accent-strong); border-left-color: var(--accent); font-weight: 600; }
+
+.toc-mobile { display: none; margin-bottom: 28px; }
+@media (max-width: 880px) { .toc-mobile { display: block; } }
+.toc-mobile summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: "Archivo"; font-weight: 600; font-size: 0.9rem;
+}
+.toc-mobile summary::-webkit-details-marker { display: none; }
+.toc-mobile[open] summary { border-radius: var(--radius) var(--radius) 0 0; }
+.toc-mobile-body { border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 10px 16px 16px; background: var(--surface); }
+.toc-mobile-body a { display: block; padding: 6px 0; color: var(--ink-muted); text-decoration: none; font-size: 0.88rem; }
+
+main { min-width: 0; }
+
+/* ---------- Hero / intro ---------- */
+.intro {
+  padding-bottom: 28px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--border);
+}
+.intro h1 { font-size: clamp(1.9rem, 3vw, 2.5rem); line-height: 1.12; margin-top: 10px; }
+.intro p.lede { max-width: 62ch; color: var(--ink-muted); font-size: 1.05rem; margin-top: 14px; }
+.quickfacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 24px;
+}
+.quickfact { background: var(--surface); padding: 12px 16px; }
+.quickfact .label { font-family: "Archivo Expanded"; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.quickfact .value { font-family: "IBM Plex Mono"; font-size: 0.88rem; margin-top: 4px; color: var(--ink); }
+
+/* ---------- Sections ---------- */
+section { margin-bottom: 56px; scroll-margin-top: 80px; }
+section .eyebrow { display: block; margin-bottom: 8px; }
+section h2 { font-size: 1.5rem; }
+section > p.section-dek { color: var(--ink-muted); max-width: 68ch; margin-top: 10px; }
+h3 { font-size: 1.08rem; margin-top: 30px; margin-bottom: 12px; }
+h3.first { margin-top: 22px; }
+p { max-width: 72ch; }
+.prose p + p { margin-top: 12px; }
+
+/* ---------- Feature grid ---------- */
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-top: 20px; }
+.feature-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 18px; box-shadow: var(--shadow);
+}
+.feature-card h4 { font-size: 0.92rem; font-weight: 700; }
+.feature-card p { font-size: 0.85rem; color: var(--ink-muted); margin-top: 6px; }
+
+.ai-table-wrap { overflow-x: auto; margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+table caption { text-align: left; padding: 10px 16px; font-family: "Archivo"; font-weight: 700; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+thead th { background: var(--surface-2); font-family: "Archivo Expanded"; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+td.mono, .env-name { color: var(--accent-strong); font-size: 0.82rem; white-space: nowrap; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; font-family: "IBM Plex Mono"; }
+.pill.req { background: var(--warn-soft); color: var(--warn); }
+.pill.opt { background: var(--good-soft); color: var(--good); }
+
+/* ---------- Steps ---------- */
+.steps { counter-reset: step; margin-top: 22px; display: flex; flex-direction: column; gap: 0; }
+.step {
+  counter-increment: step;
+  position: relative;
+  padding: 0 0 28px 46px;
+  border-left: 2px solid var(--border);
+  margin-left: 15px;
+}
+.step:last-child { border-left-color: transparent; padding-bottom: 4px; }
+.step::before {
+  content: counter(step);
+  position: absolute; left: -17px; top: 0;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--accent);
+  color: var(--accent-strong);
+  display: flex; align-items: center; justify-content: center;
+  font-family: "IBM Plex Mono"; font-weight: 600; font-size: 0.85rem;
+}
+.step h4 { font-size: 1rem; margin-bottom: 6px; padding-top: 4px; }
+.step p { color: var(--ink-muted); font-size: 0.92rem; }
+.step p + p { margin-top: 8px; }
+
+/* ---------- Code blocks ---------- */
+pre {
+  margin: 12px 0 0;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: "IBM Plex Mono";
+  font-size: 0.82rem;
+  line-height: 1.65;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+code.inline {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 0.86em;
+  color: var(--accent-strong);
+}
+
+/* ---------- Callouts ---------- */
+.callout {
+  display: flex; gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-top: 16px;
+  font-size: 0.9rem;
+}
+.callout .icon { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
+.callout.note { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); background: var(--accent-soft); }
+.callout.note .icon { color: var(--accent-strong); }
+.callout.warn { border-color: color-mix(in srgb, var(--warn) 35%, var(--border)); background: var(--warn-soft); }
+.callout.warn .icon { color: var(--warn); }
+.callout p { color: var(--ink); margin: 0; }
+.callout strong { font-family: "Archivo"; }
+
+/* ---------- Credential cards ---------- */
+.cred-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 18px; }
+.cred-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.cred-role { font-family: "Archivo"; font-weight: 700; font-size: 0.88rem; }
+.cred-line { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; font-family: "IBM Plex Mono"; font-size: 0.8rem; }
+.cred-line .k { color: var(--ink-faint); }
+.cred-line .v { color: var(--ink); }
+
+/* ---------- FAQ ---------- */
+details.faq { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); margin-top: 10px; overflow: hidden; }
+details.faq summary {
+  cursor: pointer; list-style: none; padding: 14px 16px; font-family: "Archivo"; font-weight: 600; font-size: 0.94rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+details.faq summary::-webkit-details-marker { display: none; }
+details.faq summary .chev { transition: transform .18s ease; flex-shrink: 0; color: var(--ink-faint); }
+details.faq[open] summary .chev { transform: rotate(45deg); }
+details.faq .faq-body { padding: 0 16px 16px; color: var(--ink-muted); font-size: 0.9rem; max-width: 68ch; }
+details.faq .faq-body p + p { margin-top: 8px; }
+
+footer.page-footer {
+  max-width: 1180px; margin: 0 auto; padding: 0 28px 60px;
+  display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: baseline; justify-content: space-between;
+  color: var(--ink-faint); font-size: 0.82rem; border-top: 1px solid var(--border); padding-top: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 15L9 9L13 13L21 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 5H21V11" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="brand-name">FreightFast</div>
+  </div>
+  <div class="topbar-meta">
+    <span class="badge">Next.js 16.2.9</span>
+    <span class="badge accent">v0.1.0</span>
+  </div>
+</div>
+<nav class="doc-tabs" aria-label="Document switcher">
+  <a href="documentation.html" class="active">Documentation</a>
+  <a href="installation-guide.html">Installation Guide</a>
+  <a href="hosting-requirements.html">Hosting Requirements</a>
+  <a href="third-party-services.html">Third-Party Services</a>
+</nav>
+
+<div class="shell">
+  <nav class="toc-desktop" aria-label="Table of contents">
+    <div class="toc-group">
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#features">Core features</a></li>
+        <li><a href="#ai-features">AI-assisted tools</a></li>
+        <li><a href="#support">Support</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <details class="toc-mobile">
+      <summary>Contents<span class="chev">▾</span></summary>
+      <div class="toc-mobile-body">
+        <a href="#overview">Overview</a>
+        <a href="#features">Core features</a>
+        <a href="#ai-features">AI-assisted tools</a>
+        <a href="#support">Support</a>
+      </div>
+    </details>
+
+    <div class="intro">
+      <span class="eyebrow">Freight forwarding &amp; logistics ERP</span>
+      <h1>Documentation</h1>
+      <p class="lede">FreightFast is an enterprise-grade freight forwarding ERP — shipment requests, quotations, job files, freight documents, finance closeout, and a client portal, in one system. This page covers what it is and everything it does. For setup steps, see the <a href="installation-guide.html">Installation Guide</a>.</p>
+      <div class="quickfacts">
+        <div class="quickfact"><div class="label">Framework</div><div class="value">Next.js 16 (App Router)</div></div>
+        <div class="quickfact"><div class="label">Language</div><div class="value">TypeScript, React 19</div></div>
+        <div class="quickfact"><div class="label">Database</div><div class="value">MySQL / MariaDB + Prisma</div></div>
+        <div class="quickfact"><div class="label">Auth</div><div class="value">NextAuth.js</div></div>
+        <div class="quickfact"><div class="label">Documents</div><div class="value">PDFKit</div></div>
+        <div class="quickfact"><div class="label">AI layer</div><div class="value">Google Gemini (optional)</div></div>
+      </div>
+    </div>
+
+    <section id="overview">
+      <span class="eyebrow">01 — Read first</span>
+      <h2>What FreightFast is</h2>
+      <p class="section-dek">A single Next.js application with a MySQL-compatible database. There's no separate backend service to stand up — the app, API routes, and background job endpoints all ship from the same codebase.</p>
+      <div class="prose">
+        <h3 class="first">Three surfaces, one app</h3>
+        <p>The build serves three distinct sign-in surfaces from the same deployment: an <strong>operations dashboard</strong> for company staff (quotations, shipments, finance), a <strong>platform console</strong> for the SaaS operator managing tenant companies, and a <strong>client portal</strong> your customers use to track their own shipments and documents. Routing between them is host-based, configured during installation.</p>
+        <h3>Multi-tenant by design</h3>
+        <p>Every record belongs to exactly one company, and within a company, to exactly one branch. If you're installing this for a single freight forwarder, you'll use one company with one or more branches; the platform console exists for cases where you're operating this as a SaaS across multiple client companies.</p>
+        <h3>Role-based from the ground up</h3>
+        <p>Seven predefined roles — Company Admin, Operations Manager, Documentation Officer, Accounts Officer, Sales Executive, and two more — gate every module, action, and record. Permissions are enforced server-side on every request, not just hidden in the UI.</p>
+      </div>
+    </section>
+
+    <section id="features">
+      <span class="eyebrow">02 — What's inside</span>
+      <h2>Core features</h2>
+      <p class="section-dek">Eighteen operational modules covering the full shipment lifecycle, from first inquiry to closed invoice.</p>
+      <div class="feature-grid">
+        <div class="feature-card"><h4>Control Tower Dashboard</h4><p>Real-time KPIs, shipment visibility, workflow blocker detection, revenue &amp; profit analytics.</p></div>
+        <div class="feature-card"><h4>Customer &amp; CRM Management</h4><p>Customer database, company profiles, contacts, billing details, shipment history.</p></div>
+        <div class="feature-card"><h4>Shipment Request Management</h4><p>Inquiry intake, cargo capture, Port-to-Port / Door-to-Door scope, auto-filled ETD/ETA.</p></div>
+        <div class="feature-card"><h4>Quotation Management</h4><p>Freight &amp; local charge estimation, buy/sell rates, profit visibility, approval workflow.</p></div>
+        <div class="feature-card"><h4>Job File Management</h4><p>10-tab workspace: Overview, Workflow, Commercial, Operations, Documents, Freight Docs, Finance, Portal, Tasks, Timeline.</p></div>
+        <div class="feature-card"><h4>Document Compliance Engine</h4><p>Mode/type-aware document requirements, required-document gates, finance close blockers.</p></div>
+        <div class="feature-card"><h4>Freight Document Generator</h4><p>PDF generation for HBL, HAWB, sea/air manifests, delivery orders, debit notes, arrival notices.</p></div>
+        <div class="feature-card"><h4>Finance &amp; Closeout</h4><p>Invoicing, vendor bills, margin audit, financial lock, audit-safe closeouts.</p></div>
+        <div class="feature-card"><h4>Client Portal</h4><p>OTP login, forced first-time password reset, milestone tracking, document access.</p></div>
+        <div class="feature-card"><h4>Role-Based Access Control</h4><p>Seven predefined roles, fine-grained permissions, strict company isolation.</p></div>
+        <div class="feature-card"><h4>Multi-Branch Management</h4><p>Every record owned by exactly one branch; staff scoped to the branches they belong to.</p></div>
+        <div class="feature-card"><h4>Automated Status Notifications</h4><p>In-app alerts on invoice/payment/POD events, plus an idempotent email/WhatsApp outbox.</p></div>
+        <div class="feature-card"><h4>Advanced Global Search</h4><p>One search box across customers, shipments, quotations, invoices, vendors, and documents.</p></div>
+        <div class="feature-card"><h4>Saved Filters &amp; Views</h4><p>Private, named filter presets on list pages, with a per-user default view.</p></div>
+        <div class="feature-card"><h4>Customizable Dashboard</h4><p>Reorder and show/hide dashboard sections per user, with a one-click reset.</p></div>
+        <div class="feature-card"><h4>Import &amp; Export Data</h4><p>CSV export across eight entities; a guided import wizard for customers and vendors.</p></div>
+        <div class="feature-card"><h4>Recurring Task Management</h4><p>Daily/weekly/monthly task templates, generated by an idempotent self-hosted cron.</p></div>
+        <div class="feature-card"><h4>Custom Document Templates</h4><p>Branded, versioned layouts for quotations, invoices, HBL, HAWB, debit notes, manifests.</p></div>
+        <div class="feature-card"><h4>Approval Workflow System</h4><p>Threshold-based sign-off chains for vendor bills and payments, up to five approver steps.</p></div>
+      </div>
+    </section>
+
+    <section id="ai-features">
+      <span class="eyebrow">03 — Optional layer</span>
+      <h2>AI-assisted tools</h2>
+      <p class="section-dek">Gated behind a platform kill-switch, a per-company toggle, and a daily request cap — off by default until a Gemini API key is configured. See the Installation Guide's environment reference for <code class="inline">AI_ENABLED</code>.</p>
+      <div class="ai-table-wrap">
+        <table>
+          <thead><tr><th>Tool</th><th>What it does</th><th>Powered by</th></tr></thead>
+          <tbody>
+            <tr><td>Shipment Assistant</td><td>Chat-style Q&amp;A over a shipment's status, tasks, and open issues.</td><td>Gemini</td></tr>
+            <tr><td>Document Reader</td><td>Extracts shipment and document fields from an uploaded file.</td><td>Gemini</td></tr>
+            <tr><td>Document Checker</td><td>Flags missing, incorrect, or inconsistent fields on a freight document.</td><td>Gemini</td></tr>
+            <tr><td>Document Cross-Check</td><td>Compares multiple documents on a shipment and flags mismatches.</td><td>Gemini</td></tr>
+            <tr><td>Quotation Generator</td><td>Drafts charge lines from customer, shipment, and pricing context.</td><td>Gemini</td></tr>
+            <tr><td>Email Generator</td><td>Drafts a customer-ready email from shipment and operational context.</td><td>Gemini</td></tr>
+            <tr><td>Shipment Summary</td><td>Turns a full job file into a short operational summary.</td><td>Gemini</td></tr>
+            <tr><td>Report Insights</td><td>Explains notable trends and changes on financial reports.</td><td>Gemini</td></tr>
+            <tr><td>Smart Search</td><td>Natural-language mode for the global search box.</td><td>Gemini</td></tr>
+            <tr><td>Customer Insights</td><td>Summarizes a customer's history, activity, and opportunities.</td><td>Gemini</td></tr>
+            <tr><td>Delay Alerts</td><td>Flags shipments at risk of delay from ETA and workflow data.</td><td>Rule-based</td></tr>
+            <tr><td>Profit Analysis</td><td>Highlights low-margin shipments against historical averages.</td><td>Rule-based</td></tr>
+            <tr><td>Task Suggestions</td><td>Recommends next actions from open exceptions and pending work.</td><td>Rule-based</td></tr>
+            <tr><td>Shipment Health Score</td><td>Scores a shipment from status, milestones, documents, and conditions.</td><td>Rule-based</td></tr>
+            <tr><td>Exception Radar</td><td>Surfaces shipments, documents, or workflows that need attention.</td><td>Rule-based aggregator</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout note">
+        <svg class="icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v4.2M10 6.8v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <p>"Rule-based" tools don't call an external model — they're deterministic logic over your own data. They still route through the same permission and company-toggle gate as the Gemini-backed tools, so access control stays consistent either way.</p>
+      </div>
+    </section>
+
+    <section id="support" style="margin-bottom: 0;">
+      <span class="eyebrow">04 — Get help</span>
+      <h2>Support</h2>
+      <p class="section-dek">For setup and configuration issues, start with the <a href="installation-guide.html">Installation Guide</a> — it covers environment variables, default accounts, and a troubleshooting section for the most common setup problems. Keep both documents alongside your copy of the source for reference during future upgrades.</p>
+    </section>
+  </main>
+</div>
+
+<footer class="page-footer">
+  <span>FreightFast — Freight Forwarding &amp; Logistics ERP</span>
+  <span>Documentation generated for project submission</span>
+</footer>
+
+<script>
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc-desktop a'));
+    var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    if (!('IntersectionObserver' in window) || !sections.length) return;
+    var byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var link = byId[entry.target.id];
+        if (!link) return;
+        if (entry.isIntersecting) {
+          links.forEach(function (a) { a.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function (s) { observer.observe(s); });
+  })();
+</script>
+</body>
+</html>

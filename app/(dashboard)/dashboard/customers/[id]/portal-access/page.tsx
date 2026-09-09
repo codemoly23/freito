@@ -87,7 +87,7 @@ export default async function CustomerPortalAccessPage({ params }: PageProps) {
                 <p className="font-semibold text-xs text-cyan-900 uppercase tracking-wider">Client Portal Login URL</p>
                 <ClientPortalShareCard
                   customerName={customer.name}
-                  companyName={customer.company?.name ?? "Freito"}
+                  companyName={customer.company?.name ?? "FreightFast"}
                   clientCode={account.displayClientCode}
                   portalSlug={customer.company?.portalSlug || "demo-freight"}
                   email={account.email}

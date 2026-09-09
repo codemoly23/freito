@@ -5,7 +5,7 @@ import { SplashScreen } from "@/components/splash-screen";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Freito",
+  title: "FreightFast",
   description: "Freight Forwarding Operating System for Bangladesh logistics teams.",
   icons: {
     icon: [

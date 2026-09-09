@@ -42,7 +42,7 @@ export async function sendClientPortalAccess(
       phone: payload.phone,
       name: payload.contactName || payload.customerName,
     },
-    subject: "Your Freito client portal login",
+    subject: "Your FreightFast client portal login",
     body: {
       companyName: payload.companyName,
       customerName: payload.customerName,

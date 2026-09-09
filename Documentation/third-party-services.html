@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreightFast Third-Party Services</title>
+<meta name="description" content="Every external service FreightFast can integrate with — what each is for, whether it's required, and where to get it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Archivo+Expanded:wght@600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F7F8;
+  --surface: #FFFFFF;
+  --surface-2: #EDF2F3;
+  --border: #DCE2E4;
+  --border-strong: #C4CFD2;
+  --ink: #16232B;
+  --ink-muted: #5B6B72;
+  --ink-faint: #8A9AA0;
+  --accent: #0E8F9A;
+  --accent-strong: #086974;
+  --accent-soft: #E3F4F5;
+  --accent-ink: #FFFFFF;
+  --good: #1F7A4C;
+  --good-soft: #E5F4EC;
+  --warn: #8A5A00;
+  --warn-soft: #FBF0DA;
+  --code-bg: #0F1B23;
+  --code-ink: #D9E6E9;
+  --code-faint: #7C96A0;
+  --code-accent: #4FD6DE;
+  --shadow: 0 1px 2px rgba(16,35,43,0.06), 0 8px 24px -12px rgba(16,35,43,0.12);
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A131A;
+    --surface: #101B23;
+    --surface-2: #15232C;
+    --border: #223138;
+    --border-strong: #2E4048;
+    --ink: #E8EEF0;
+    --ink-muted: #93A6AC;
+    --ink-faint: #64767C;
+    --accent: #3FCAD3;
+    --accent-strong: #6EDDE4;
+    --accent-soft: #142B2E;
+    --accent-ink: #06222A;
+    --good: #4FCC8A;
+    --good-soft: #12271E;
+    --warn: #E3B23D;
+    --warn-soft: #2A2110;
+    --code-bg: #0A1319;
+    --code-ink: #D9E6E9;
+    --code-faint: #6E8891;
+    --code-accent: #4FD6DE;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0A131A;
+  --surface: #101B23;
+  --surface-2: #15232C;
+  --border: #223138;
+  --border-strong: #2E4048;
+  --ink: #E8EEF0;
+  --ink-muted: #93A6AC;
+  --ink-faint: #64767C;
+  --accent: #3FCAD3;
+  --accent-strong: #6EDDE4;
+  --accent-soft: #142B2E;
+  --accent-ink: #06222A;
+  --good: #4FCC8A;
+  --good-soft: #12271E;
+  --warn: #E3B23D;
+  --warn-soft: #2A2110;
+  --code-bg: #0A1319;
+  --code-ink: #D9E6E9;
+  --code-faint: #6E8891;
+  --code-accent: #4FD6DE;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.5);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Public Sans", -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: "Archivo", "Public Sans", sans-serif; font-weight: 700; color: var(--ink); text-wrap: balance; margin: 0; }
+
+.eyebrow {
+  font-family: "Archivo Expanded", "Archivo", sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+code, .mono, .env-name, td.mono, th.mono {
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+a { color: var(--accent-strong); }
+
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: linear-gradient(155deg, var(--accent), var(--accent-strong));
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.brand-mark svg { width: 17px; height: 17px; }
+.brand-name { font-family: "Archivo"; font-weight: 800; font-size: 1.05rem; letter-spacing: -0.01em; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { color: var(--ink-muted); font-size: 0.8rem; }
+.topbar-meta { display: flex; align-items: center; gap: 10px; }
+.badge {
+  font-family: "IBM Plex Mono";
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.badge.accent { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
+:root[data-theme="dark"] .badge.accent { color: var(--accent-strong); }
+
+/* ---------- Doc switcher tabs ---------- */
+.doc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 28px 0;
+}
+.doc-tabs a {
+  font-family: "Archivo Expanded";
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink-muted);
+  padding: 8px 14px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid transparent;
+}
+.doc-tabs a:hover { color: var(--ink); }
+.doc-tabs a.active {
+  color: var(--accent-strong);
+  background: var(--surface);
+  border-color: var(--border);
+  border-bottom-color: var(--surface);
+  margin-bottom: -1px;
+}
+
+/* ---------- Shell ---------- */
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  gap: 48px;
+  padding: 36px 28px 96px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 880px) {
+  .shell { grid-template-columns: 1fr; padding: 20px 18px 72px; gap: 22px; }
+  .toc-desktop { display: none; }
+}
+
+nav.toc-desktop {
+  position: sticky;
+  top: 68px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.toc-group + .toc-group { margin-top: 18px; }
+.toc-group-label {
+  font-family: "Archivo Expanded"; font-size: 0.66rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; display: block;
+}
+nav.toc-desktop ul { list-style: none; margin: 0; padding: 0; }
+nav.toc-desktop a {
+  display: block;
+  padding: 5px 0 5px 12px;
+  border-left: 2px solid var(--border);
+  color: var(--ink-muted);
+  text-decoration: none;
+  font-size: 0.86rem;
+  transition: border-color .15s, color .15s;
+}
+nav.toc-desktop a:hover { color: var(--ink); }
+nav.toc-desktop a.active { color: var(--accent-strong); border-left-color: var(--accent); font-weight: 600; }
+
+.toc-mobile { display: none; margin-bottom: 28px; }
+@media (max-width: 880px) { .toc-mobile { display: block; } }
+.toc-mobile summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: "Archivo"; font-weight: 600; font-size: 0.9rem;
+}
+.toc-mobile summary::-webkit-details-marker { display: none; }
+.toc-mobile[open] summary { border-radius: var(--radius) var(--radius) 0 0; }
+.toc-mobile-body { border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 10px 16px 16px; background: var(--surface); }
+.toc-mobile-body a { display: block; padding: 6px 0; color: var(--ink-muted); text-decoration: none; font-size: 0.88rem; }
+
+main { min-width: 0; }
+
+/* ---------- Hero / intro ---------- */
+.intro {
+  padding-bottom: 28px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--border);
+}
+.intro h1 { font-size: clamp(1.9rem, 3vw, 2.5rem); line-height: 1.12; margin-top: 10px; }
+.intro p.lede { max-width: 62ch; color: var(--ink-muted); font-size: 1.05rem; margin-top: 14px; }
+.quickfacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 24px;
+}
+.quickfact { background: var(--surface); padding: 12px 16px; }
+.quickfact .label { font-family: "Archivo Expanded"; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.quickfact .value { font-family: "IBM Plex Mono"; font-size: 0.88rem; margin-top: 4px; color: var(--ink); }
+
+/* ---------- Sections ---------- */
+section { margin-bottom: 56px; scroll-margin-top: 80px; }
+section .eyebrow { display: block; margin-bottom: 8px; }
+section h2 { font-size: 1.5rem; }
+section > p.section-dek { color: var(--ink-muted); max-width: 68ch; margin-top: 10px; }
+h3 { font-size: 1.08rem; margin-top: 30px; margin-bottom: 12px; }
+h3.first { margin-top: 22px; }
+p { max-width: 72ch; }
+.prose p + p { margin-top: 12px; }
+
+.ai-table-wrap { overflow-x: auto; margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+table caption { text-align: left; padding: 10px 16px; font-family: "Archivo"; font-weight: 700; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+thead th { background: var(--surface-2); font-family: "Archivo Expanded"; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+td.mono, .env-name { color: var(--accent-strong); font-size: 0.82rem; white-space: nowrap; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; font-family: "IBM Plex Mono"; }
+.pill.req { background: var(--warn-soft); color: var(--warn); }
+.pill.opt { background: var(--good-soft); color: var(--good); }
+
+pre {
+  margin: 12px 0 0;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: "IBM Plex Mono";
+  font-size: 0.82rem;
+  line-height: 1.65;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+code.inline {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 0.86em;
+  color: var(--accent-strong);
+}
+
+.callout {
+  display: flex; gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-top: 16px;
+  font-size: 0.9rem;
+}
+.callout .icon { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
+.callout.note { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); background: var(--accent-soft); }
+.callout.note .icon { color: var(--accent-strong); }
+.callout.warn { border-color: color-mix(in srgb, var(--warn) 35%, var(--border)); background: var(--warn-soft); }
+.callout.warn .icon { color: var(--warn); }
+.callout p { color: var(--ink); margin: 0; }
+.callout strong { font-family: "Archivo"; }
+
+footer.page-footer {
+  max-width: 1180px; margin: 0 auto; padding: 0 28px 60px;
+  display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: baseline; justify-content: space-between;
+  color: var(--ink-faint); font-size: 0.82rem; border-top: 1px solid var(--border); padding-top: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 15L9 9L13 13L21 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 5H21V11" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="brand-name">FreightFast</div>
+  </div>
+  <div class="topbar-meta">
+    <span class="badge">Next.js 16.2.9</span>
+    <span class="badge accent">v0.1.0</span>
+  </div>
+</div>
+<nav class="doc-tabs" aria-label="Document switcher">
+  <a href="documentation.html">Documentation</a>
+  <a href="installation-guide.html">Installation Guide</a>
+  <a href="hosting-requirements.html">Hosting Requirements</a>
+  <a href="third-party-services.html" class="active">Third-Party Services</a>
+</nav>
+
+<div class="shell">
+  <nav class="toc-desktop" aria-label="Table of contents">
+    <div class="toc-group">
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#database">Database</a></li>
+        <li><a href="#storage">File storage</a></li>
+        <li><a href="#ai">AI features</a></li>
+        <li><a href="#delivery">Delivery channels</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <details class="toc-mobile">
+      <summary>Contents<span class="chev">▾</span></summary>
+      <div class="toc-mobile-body">
+        <a href="#overview">Overview</a>
+        <a href="#database">Database</a>
+        <a href="#storage">File storage</a>
+        <a href="#ai">AI features</a>
+        <a href="#delivery">Delivery channels</a>
+      </div>
+    </details>
+
+    <div class="intro">
+      <span class="eyebrow">Know the costs before you launch</span>
+      <h1>Third-party services</h1>
+      <p class="lede">FreightFast can integrate with a handful of external services. Exactly one is required to run the app at all — the rest are optional, and each feature that needs one simply stays switched off until it's configured.</p>
+    </div>
+
+    <section id="overview">
+      <span class="eyebrow">01 — At a glance</span>
+      <h2>What needs an account, and what doesn't</h2>
+      <div class="ai-table-wrap">
+        <table>
+          <thead><tr><th>Service</th><th>Used for</th><th></th><th>Where to get it</th></tr></thead>
+          <tbody>
+            <tr><td>MySQL / MariaDB database</td><td>All application data</td><td><span class="pill req">required</span></td><td>Self-hosted on your server, or a managed provider</td></tr>
+            <tr><td>Azure Blob Storage</td><td>Uploaded shipment documents</td><td><span class="pill opt">optional</span></td><td>portal.azure.com</td></tr>
+            <tr><td>Google Gemini (Google AI Studio)</td><td>10 of the 15 AI-assisted tools</td><td><span class="pill opt">optional</span></td><td>aistudio.google.com</td></tr>
+            <tr><td>SMTP provider</td><td>Outbound email — notifications, client portal credentials</td><td><span class="pill opt">optional</span></td><td>Any SMTP relay</td></tr>
+            <tr><td>WhatsApp Cloud API (Meta)</td><td>WhatsApp notification delivery</td><td><span class="pill opt">optional</span></td><td>developers.facebook.com</td></tr>
+            <tr><td>SMS gateway</td><td>SMS notification delivery</td><td><span class="pill opt">optional</span></td><td>Any SMS API provider</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout note">
+        <svg class="icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v4.2M10 6.8v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <p>Everything below the database is opt-in. Install the app, run it, and add these later as you need them — nothing has to be decided on day one.</p>
+      </div>
+    </section>
+
+    <section id="database">
+      <span class="eyebrow">02 — Required</span>
+      <h2>Database</h2>
+      <p class="section-dek">The only hard external dependency. Every record — shipments, quotations, invoices, users — lives here.</p>
+      <div class="prose">
+        <p><strong>Self-hosted:</strong> install MySQL 8.0 or MariaDB 10.6+ on the same server as the app. No ongoing cost beyond the server itself.</p>
+        <p><strong>Managed:</strong> a hosted MySQL-compatible database (e.g. Amazon RDS, DigitalOcean Managed Databases, PlanetScale) removes the need to administer the database server yourself, at the cost of the provider's hosting fee. Either path works — set <code class="inline">DATABASE_URL</code> to point at whichever you choose.</p>
+      </div>
+    </section>
+
+    <section id="storage">
+      <span class="eyebrow">03 — Optional</span>
+      <h2>File storage — Azure Blob Storage</h2>
+      <p class="section-dek">Powers the Shipment Document Vault — uploaded freight documents, HBL/HAWB copies, and other shipment files.</p>
+      <div class="prose">
+        <p>Without <code class="inline">AZURE_STORAGE_CONNECTION_STRING</code> configured, document upload is unavailable but the rest of the app functions normally. Azure's free-tier credits for new accounts are typically enough to evaluate the feature before committing to a paid plan.</p>
+      </div>
+    </section>
+
+    <section id="ai">
+      <span class="eyebrow">04 — Optional</span>
+      <h2>AI features — Google Gemini</h2>
+      <p class="section-dek">Ten of the fifteen AI-assisted tools (Document Reader, Document Checker, Quotation Generator, Email Generator, and others) call the Gemini API. The remaining five are deterministic and need no external service.</p>
+      <div class="prose">
+        <p>Get a key from Google AI Studio and set <code class="inline">GOOGLE_GENERATIVE_AI_API_KEY</code>, plus <code class="inline">AI_ENABLED=true</code>. Gemini's free tier covers moderate usage; heavier volume moves to its paid pricing. Without a key configured, every AI feature — including the five deterministic ones, which share the same permission gate — stays switched off.</p>
+      </div>
+    </section>
+
+    <section id="delivery" style="margin-bottom: 0;">
+      <span class="eyebrow">05 — Optional</span>
+      <h2>Delivery channels</h2>
+      <p class="section-dek">In-app notifications always work with no setup. These three only govern sending a copy externally.</p>
+
+      <h3 class="first">Email — any SMTP provider</h3>
+      <p>Point <code class="inline">SMTP_HOST</code>/<code class="inline">SMTP_PORT</code>/<code class="inline">SMTP_USER</code>/<code class="inline">SMTP_PASS</code> at any SMTP relay — a transactional email provider, your own mail server, or even a personal account for testing. Pricing and free-tier limits vary by provider.</p>
+
+      <h3>WhatsApp — Meta WhatsApp Cloud API</h3>
+      <p>Requires a Meta for Developers app with the WhatsApp Business Platform enabled. Meta bills per conversation once you're past its free tier — see Meta's own pricing for current rates.</p>
+
+      <h3>SMS — any SMS gateway</h3>
+      <p>Plug in whichever regional SMS API provider you prefer via <code class="inline">SMS_PROVIDER</code>/<code class="inline">SMS_API_KEY</code>. Cost is per-message and varies significantly by provider and destination country.</p>
+    </section>
+  </main>
+</div>
+
+<footer class="page-footer">
+  <span>FreightFast — Freight Forwarding &amp; Logistics ERP</span>
+  <span>Third-party services generated for project submission</span>
+</footer>
+
+<script>
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc-desktop a'));
+    var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    if (!('IntersectionObserver' in window) || !sections.length) return;
+    var byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var link = byId[entry.target.id];
+        if (!link) return;
+        if (entry.isIntersecting) {
+          links.forEach(function (a) { a.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function (s) { observer.observe(s); });
+  })();
+</script>
+</body>
+</html>

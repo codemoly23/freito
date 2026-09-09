@@ -42,7 +42,7 @@ export default async function PlatformLoginPage() {
 
       <section className="hidden min-h-screen bg-slate-950 px-12 py-16 text-white lg:flex lg:flex-col lg:justify-between">
         <div>
-          <p className="text-sm font-semibold text-cyan-300">Freito Operator Console</p>
+          <p className="text-sm font-semibold text-cyan-300">FreightFast Operator Console</p>
           <h1 className="mt-8 max-w-2xl text-5xl font-semibold leading-tight">
             Control tenant access without entering company operations.
           </h1>

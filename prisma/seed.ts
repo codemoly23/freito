@@ -536,11 +536,11 @@ const defaultModules = [
 
 async function upsertCompany() {
   const existing = await prisma.company.findFirst({
-    where: { OR: [{ name: "Freito Demo Company" }, { name: "Freight Control Demo Company" }] },
+    where: { OR: [{ name: "FreightFast Demo Company" }, { name: "Freito Demo Company" }, { name: "Freight Control Demo Company" }] },
   });
 
   const data = {
-    legalName: "Freito Demo Company Ltd.",
+    legalName: "FreightFast Demo Company Ltd.",
     email: "ops@freightcontrol.local",
     phone: "+8801700000000",
     address: "Dhaka, Bangladesh",
@@ -560,7 +560,7 @@ async function upsertCompany() {
     return prisma.company.update({
       where: { id: existing.id },
       data: {
-        name: "Freito Demo Company",
+        name: "FreightFast Demo Company",
         ...data,
       },
     });
@@ -568,7 +568,7 @@ async function upsertCompany() {
 
   return prisma.company.create({
     data: {
-      name: "Freito Demo Company",
+      name: "FreightFast Demo Company",
       ...data,
     },
   });
@@ -1067,6 +1067,7 @@ async function main() {
     demoRequest = await prisma.shipmentRequest.create({
       data: {
         companyId: company.id,
+        branchId: headOffice.id,
         customerId: demoCustomer.id,
         requestNo: demoRequestNo,
         clientPortalAccountId: clientAccount?.id ?? null,
@@ -1094,6 +1095,7 @@ async function main() {
     demoQuotation = await prisma.quotation.create({
       data: {
         companyId: company.id,
+        branchId: headOffice.id,
         customerId: demoCustomer.id,
         shipmentRequestId: demoRequest.id,
         quoteNo: demoQuoteNo,
@@ -1112,6 +1114,7 @@ async function main() {
     demoShipment = await prisma.shipmentJob.create({
       data: {
         companyId: company.id,
+        branchId: headOffice.id,
         customerId: demoCustomer.id,
         jobNo: demoJobNo,
         shipmentType: 'IMPORT',
@@ -1137,11 +1140,12 @@ async function main() {
   const demoInvoiceNo = `INV-${year}-0001`;
   let demoInvoice = await prisma.invoice.findFirst({ where: { companyId: company.id, invoiceNo: demoInvoiceNo } });
   if (demoInvoice) {
-    await prisma.invoice.update({ where: { id: demoInvoice.id }, data: { company: { connect: { id: company.id } }, customer: { connect: { id: demoCustomer.id } }, quotation: { connect: { id: demoQuotation.id } }, shipmentjob: { connect: { id: demoShipment.id } }, user: { connect: { id: companyAdmin.id } }, dueAmount: 1000, currency: 'BDT', status: 'SENT', deletedAt: null } });
+    await prisma.invoice.update({ where: { id: demoInvoice.id }, data: { company: { connect: { id: company.id } }, branch: { connect: { id: headOffice.id } }, customer: { connect: { id: demoCustomer.id } }, quotation: { connect: { id: demoQuotation.id } }, shipmentjob: { connect: { id: demoShipment.id } }, user: { connect: { id: companyAdmin.id } }, dueAmount: 1000, currency: 'BDT', status: 'SENT', deletedAt: null } });
   } else {
     demoInvoice = await prisma.invoice.create({
       data: {
         company: { connect: { id: company.id } },
+        branch: { connect: { id: headOffice.id } },
         customer: { connect: { id: demoCustomer.id } },
         quotation: { connect: { id: demoQuotation.id } },
         shipmentjob: { connect: { id: demoShipment.id } },

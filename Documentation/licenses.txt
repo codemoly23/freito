@@ -1,0 +1,70 @@
+FreightFast - Licenses & Credits
+=================================
+
+THIS ITEM
+---------
+FreightFast itself is licensed under the Envato Market license (Regular or
+Extended) selected at purchase. See the license certificate issued with your
+purchase for its exact terms.
+
+THIRD-PARTY OPEN-SOURCE PACKAGES
+---------------------------------
+FreightFast is built with the following open-source packages, used
+unmodified via npm. Each remains under its own license, listed below as
+reported by its published package metadata.
+
+Framework & core
+  next                          MIT
+  react                         MIT
+  react-dom                     MIT
+  typescript                    Apache-2.0
+
+Database & ORM
+  prisma                        Apache-2.0
+  @prisma/client                Apache-2.0
+  mariadb                       LGPL-2.1-or-later
+
+Authentication
+  next-auth                     ISC
+  bcryptjs                      BSD-3-Clause
+
+Styling
+  tailwindcss                   MIT
+  class-variance-authority      Apache-2.0
+  clsx                          MIT
+
+UI components
+  @radix-ui/react-dialog        MIT
+  (and other @radix-ui/* packages, each MIT)
+  lucide-react                  ISC
+
+Documents & data
+  pdfkit                        MIT
+  nodemailer                    MIT-0
+  luxon                         MIT
+  papaparse                     MIT
+  zod                           MIT
+
+AI
+  ai                             Apache-2.0
+  @ai-sdk/google                 Apache-2.0
+
+Cloud storage
+  @azure/storage-blob            MIT
+
+This list covers the primary runtime dependencies; the full set (with exact
+versions) is in package.json / package-lock.json. All of the above permit
+use in commercial, closed-source distribution. The mariadb driver (used
+as-is, not modified) is LGPL-2.1 — this permits linking it into proprietary
+software distributed under a different license, provided the driver itself
+is not modified without releasing those modifications.
+
+FONTS
+-----
+The bundled Documentation set (this file's folder) uses Archivo, Archivo
+Expanded, Public Sans, and IBM Plex Mono, loaded from Google Fonts under
+the SIL Open Font License. They are loaded from Google's CDN, not bundled
+as files, and are not part of the application itself.
+
+No other third-party stock assets, icon packs, or media are bundled with
+this item.
