@@ -1,37 +1,30 @@
 import { MetricGrid, ReportFilters, ReportHeader, ReportTable } from "@/components/reports/report-ui";
-import { prisma } from "@/lib/db/prisma";
+import { Button } from "@/components/ui/button";
 import { hasPermission } from "@/lib/permissions/rbac";
 import { requireReportsPage } from "@/lib/reports/access";
 import { getReportDateRange, type ReportSearchParams } from "@/lib/reports/date-range";
-import { decimalNumber, reportMoney, reportPercent } from "@/lib/reports/formatters";
+import { reportMoney, reportPercent } from "@/lib/reports/formatters";
+import { getCustomerPerformanceRows } from "@/lib/reports/customer-summary";
 
 export default async function CustomersReportPage({ searchParams }: { searchParams: Promise<ReportSearchParams> }) {
-  const { user, companyId } = await requireReportsPage("customers");
+  const { user } = await requireReportsPage("customers");
   const params = await searchParams;
   const range = getReportDateRange(params);
-  const financial = hasPermission(user, "reports:financial");
-  const customers = await prisma.customer.findMany({
-    where: { companyId, deletedAt: null },
-    select: {
-      name: true,
-      shipmentjob: { where: { deletedAt: null, createdAt: { gte: range.from, lte: range.to } }, select: { id: true } },
-      quotation: { where: { deletedAt: null, createdAt: { gte: range.from, lte: range.to } }, select: { status: true, totalSellAmount: true } },
-      invoice: { where: { deletedAt: null, status: { not: "CANCELLED" }, invoiceDate: { gte: range.from, lte: range.to } }, select: { totalAmount: true, dueAmount: true, exchangeRateToBDT: true } },
-    },
-  });
-  const rows = customers.map((customer) => {
-    const quotationTotal = customer.quotation.reduce((sum, quotation) => sum + decimalNumber(quotation.totalSellAmount), 0);
-    const accepted = customer.quotation.filter((quotation) => ["ACCEPTED", "CONVERTED"].includes(quotation.status)).length;
-    const decided = accepted + customer.quotation.filter((quotation) => ["REJECTED", "EXPIRED"].includes(quotation.status)).length;
-    const invoiced = customer.invoice.reduce((sum, invoice) => sum + decimalNumber(invoice.totalAmount) * decimalNumber(invoice.exchangeRateToBDT), 0);
-    const receivable = customer.invoice.reduce((sum, invoice) => sum + decimalNumber(invoice.dueAmount) * decimalNumber(invoice.exchangeRateToBDT), 0);
-    return { name: customer.name, shipments: customer.shipmentjob.length, quotations: customer.quotation.length, quotationTotal, acceptance: decided ? accepted / decided * 100 : 0, invoiced, receivable };
-  });
-  const topShipments = [...rows].sort((a, b) => b.shipments - a.shipments);
+  const { rows, financial } = await getCustomerPerformanceRows(params);
+  const topShipments = rows;
 
   return (
     <main className="space-y-6 p-4 lg:p-6">
-      <ReportHeader title="Customer Report" description="Customer shipment and quotation performance, with finance protected by permission." />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ReportHeader title="Customer Report" description="Customer shipment and quotation performance, with finance protected by permission." />
+        {hasPermission(user, "exports:csv") ? (
+          <Button asChild size="sm" variant="outline">
+            <a download href={`/api/exports/reports/customers?from=${range.fromInput}&to=${range.toInput}`}>
+              Download CSV
+            </a>
+          </Button>
+        ) : null}
+      </div>
       <ReportFilters from={range.fromInput} to={range.toInput} />
       <MetricGrid metrics={[
         { label: "Active customers", value: rows.length },

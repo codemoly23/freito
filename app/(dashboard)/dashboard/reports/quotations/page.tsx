@@ -3,55 +3,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MetricGrid, ReportFilters, ReportHeader, ReportTable } from "@/components/reports/report-ui";
 import { prisma } from "@/lib/db/prisma";
+import { hasPermission } from "@/lib/permissions/rbac";
 import { requireReportsPage } from "@/lib/reports/access";
-import { enumParam, firstParam, getReportDateRange, type ReportSearchParams } from "@/lib/reports/date-range";
+import { type ReportSearchParams } from "@/lib/reports/date-range";
 import { decimalNumber, reportDate, reportMoney, reportPercent, statusLabel } from "@/lib/reports/formatters";
-
-const statuses = ["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED", "CONVERTED"] as const;
-const modes = ["SEA", "AIR", "LAND"] as const;
-const shipmentTypes = ["IMPORT", "EXPORT"] as const;
-const scopes = ["PORT_TO_PORT", "DOOR_TO_PORT", "PORT_TO_DOOR", "DOOR_TO_DOOR"] as const;
+import {
+  getLinkedJob,
+  getQuotationsReport,
+  quotationModes as modes,
+  quotationScopes as scopes,
+  quotationShipmentTypes as shipmentTypes,
+  quotationStatuses as statuses,
+} from "@/lib/reports/quotations-export";
 
 export default async function QuotationsReportPage({ searchParams }: { searchParams: Promise<ReportSearchParams> }) {
-  const { companyId, branchWhere } = await requireReportsPage("quotations");
+  const { user, companyId } = await requireReportsPage("quotations");
   const params = await searchParams;
-  const range = getReportDateRange(params);
-  const status = enumParam(params.status, statuses);
-  const transportMode = enumParam(params.transportMode, modes);
-  const shipmentType = enumParam(params.shipmentType, shipmentTypes);
-  const serviceScope = enumParam(params.serviceScope, scopes);
-  const customerId = firstParam(params.customerId);
-  const where = {
-    companyId,
-    deletedAt: null,
-    ...branchWhere,
-    createdAt: { gte: range.from, lte: range.to },
-    ...(status ? { status: status as never } : {}),
-    ...(transportMode ? { transportMode: transportMode as never } : {}),
-    ...(shipmentType ? { shipmentType: shipmentType as never } : {}),
-    ...(customerId ? { customerId } : {}),
-    ...(serviceScope ? { OR: [{ shipmentrequest: { serviceScope: serviceScope as never } }, { shipmentjob_quotation_shipmentJobIdToshipmentjob: { serviceScope: serviceScope as never } }] } : {}),
-  };
-  const [quotations, customers, groups] = await Promise.all([
-    prisma.quotation.findMany({
-      where,
-      select: {
-        id: true,
-        quoteNo: true,
-        status: true,
-        shipmentType: true,
-        transportMode: true,
-        totalSellAmount: true,
-        validUntil: true,
-        createdAt: true,
-        customer: { select: { name: true } },
-        shipmentrequest: { select: { serviceScope: true, rejectionReason: true } },
-        shipmentjob_quotation_shipmentJobIdToshipmentjob: { select: { id: true, jobNo: true, serviceScope: true } },
-        shipmentjob_quotation_convertedShipmentJobIdToshipmentjob: { select: { id: true, jobNo: true, serviceScope: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
+  const { quotations, where, range, status, transportMode, shipmentType, serviceScope, customerId } = await getQuotationsReport(params);
+  const [customers, groups] = await Promise.all([
     prisma.customer.findMany({ where: { companyId, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.quotation.groupBy({ by: ["status"], where, _count: { _all: true } }),
   ]);
@@ -65,7 +34,19 @@ export default async function QuotationsReportPage({ searchParams }: { searchPar
 
   return (
     <main className="space-y-6 p-4 lg:p-6">
-      <ReportHeader title="Quotation & Sales Report" description="Sales pipeline, customer quotes, conversion status, and linked job files." />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ReportHeader title="Quotation & Sales Report" description="Sales pipeline, customer quotes, conversion status, and linked job files." />
+        {hasPermission(user, "exports:csv") ? (
+          <Button asChild size="sm" variant="outline">
+            <a
+              download
+              href={`/api/exports/reports/quotations?from=${range.fromInput}&to=${range.toInput}${status ? `&status=${status}` : ""}${transportMode ? `&transportMode=${transportMode}` : ""}${shipmentType ? `&shipmentType=${shipmentType}` : ""}${serviceScope ? `&serviceScope=${serviceScope}` : ""}${customerId ? `&customerId=${customerId}` : ""}`}
+            >
+              Download CSV
+            </a>
+          </Button>
+        ) : null}
+      </div>
       <ReportFilters from={range.fromInput} to={range.toInput}>
         <select aria-label="Quotation status" name="status" defaultValue={status ?? ""} className="h-10 rounded-md border border-slate-200 px-3 text-sm"><option value="">All statuses</option>{statuses.map((value) => <option key={value}>{value}</option>)}</select>
         <select aria-label="Customer" name="customerId" defaultValue={customerId ?? ""} className="h-10 rounded-md border border-slate-200 px-3 text-sm"><option value="">All customers</option>{customers.map((customer) => <option value={customer.id} key={customer.id}>{customer.name}</option>)}</select>
@@ -83,7 +64,7 @@ export default async function QuotationsReportPage({ searchParams }: { searchPar
         { label: "Total quoted sell", value: reportMoney(totalSell) },
       ]} />
       <ReportTable title="Quotation report table" headers={["Quotation No", "Customer", "Status", "Shipment Mode / Type", "Quoted Sell", "Created Date", "Valid Until", "Linked Job / File", "Open Record"]} empty="No quotation records found for the selected filters." rows={quotations.map((quotation) => {
-        const linkedJob = quotation.shipmentjob_quotation_convertedShipmentJobIdToshipmentjob ?? quotation.shipmentjob_quotation_shipmentJobIdToshipmentjob;
+        const linkedJob = getLinkedJob(quotation);
         return [
           quotation.quoteNo,
           quotation.customer.name,

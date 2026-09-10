@@ -3,70 +3,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MetricGrid, ReportFilters, ReportHeader, ReportTable } from "@/components/reports/report-ui";
 import { prisma } from "@/lib/db/prisma";
+import { hasPermission } from "@/lib/permissions/rbac";
 import { requireReportsPage } from "@/lib/reports/access";
 import { enumParam, firstParam, getReportDateRange, type ReportSearchParams } from "@/lib/reports/date-range";
 import { reportDate, statusLabel } from "@/lib/reports/formatters";
 import { getDocumentStatusSummary } from "@/lib/reports/document-summary";
+import { getFreightDocumentReportRows, getShipmentChecklistDocumentReportRows } from "@/lib/reports/document-list";
 
 const statuses = ["PENDING", "UPLOADED", "VERIFIED", "REJECTED"] as const;
 
 export default async function DocumentsReportPage({ searchParams }: { searchParams: Promise<ReportSearchParams> }) {
-  const { companyId, branchWhere } = await requireReportsPage("documents");
+  const { user, companyId, branchWhere } = await requireReportsPage("documents");
   const params = await searchParams;
   const range = getReportDateRange(params);
   const status = enumParam(params.status, statuses);
   const shipmentJobId = firstParam(params.shipmentJobId);
   const customerId = firstParam(params.customerId);
-  const where = {
-    companyId,
-    deletedAt: null,
-    ...branchWhere,
-    createdAt: { gte: range.from, lte: range.to },
-    ...(status ? { status: status as never } : {}),
-    ...(shipmentJobId ? { shipmentJobId } : {}),
-    ...(customerId ? { shipmentjob: { customerId } } : {}),
-  };
+  const canExportCsv = hasPermission(user, "exports:csv");
   const [documents, freightDocuments, shipments, customers, checklist, summary] = await Promise.all([
-    prisma.shipmentdocument.findMany({
-      where,
-      select: {
-        id: true,
-        documentName: true,
-        documentType: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        remarks: true,
-        shipmentjob: { select: { id: true, jobNo: true, shipmentType: true, customer: { select: { name: true } } } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
-    prisma.freightdocument.findMany({
-      where: {
-        companyId,
-        deletedAt: null,
-        ...branchWhere,
-        createdAt: { gte: range.from, lte: range.to },
-        ...(shipmentJobId ? { shipmentJobId } : {}),
-        ...(customerId ? { shipmentjob: { customerId } } : {}),
-      },
-      select: {
-        id: true,
-        type: true,
-        documentNo: true,
-        referenceNo: true,
-        status: true,
-        responsibility: true,
-        handlingMode: true,
-        isClientVisible: true,
-        createdAt: true,
-        updatedAt: true,
-        shipmentjob: { select: { id: true, jobNo: true, customer: { select: { name: true } } } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
+    getShipmentChecklistDocumentReportRows(params),
+    getFreightDocumentReportRows(params),
     prisma.shipmentjob.findMany({
       where: { companyId, deletedAt: null, ...branchWhere, ...(customerId ? { customerId } : {}) },
       select: { id: true, jobNo: true, shipmentType: true, customer: { select: { name: true } }, shipmentdocument: { where: { deletedAt: null }, select: { checklistItemId: true } } },
@@ -105,6 +61,18 @@ export default async function DocumentsReportPage({ searchParams }: { searchPara
         { label: "Manifest count", value: summary.manifestCount },
         { label: "Customer Debit Note count", value: summary.customerDebitNoteCount },
       ]} />
+      {canExportCsv ? (
+        <div className="flex justify-end">
+          <Button asChild size="sm" variant="outline">
+            <a
+              download
+              href={`/api/exports/reports/documents?type=freight&from=${range.fromInput}&to=${range.toInput}${shipmentJobId ? `&shipmentJobId=${encodeURIComponent(shipmentJobId)}` : ""}${customerId ? `&customerId=${encodeURIComponent(customerId)}` : ""}`}
+            >
+              Download CSV
+            </a>
+          </Button>
+        </div>
+      ) : null}
       <ReportTable title="Freight document status table" headers={["Document Type", "Document No / Reference", "Job / File No", "Customer", "Status", "Visible to Client", "Responsibility / Handling", "Created Date", "Updated Date", "Open Record"]} empty="No freight documents found for the selected filters." rows={freightDocuments.map((document) => [
         statusLabel(document.type),
         document.documentNo || document.referenceNo || "-",
@@ -117,6 +85,18 @@ export default async function DocumentsReportPage({ searchParams }: { searchPara
         reportDate(document.updatedAt),
         <Button asChild size="sm" variant="outline" key="view"><Link href={`/dashboard/shipments/${document.shipmentjob.id}/freight-documents/${document.id}`}>View</Link></Button>,
       ])} />
+      {canExportCsv ? (
+        <div className="flex justify-end">
+          <Button asChild size="sm" variant="outline">
+            <a
+              download
+              href={`/api/exports/reports/documents?type=checklist&from=${range.fromInput}&to=${range.toInput}${status ? `&status=${encodeURIComponent(status)}` : ""}${shipmentJobId ? `&shipmentJobId=${encodeURIComponent(shipmentJobId)}` : ""}${customerId ? `&customerId=${encodeURIComponent(customerId)}` : ""}`}
+            >
+              Download CSV
+            </a>
+          </Button>
+        </div>
+      ) : null}
       <ReportTable title="Shipment document checklist table" headers={["Document Type", "Document Name / Reference", "Job / File No", "Customer", "Status", "Visible to Client", "Responsibility / Handling", "Created Date", "Updated Date", "Open Record"]} empty="No uploaded shipment checklist documents found for this period." rows={documents.map((document) => [
         document.documentType,
         document.documentName,

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   BarChart3,
   BookOpen,
@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   Ship,
   Sparkles,
+  TrendingUp,
   Upload,
   Users,
   WalletCards,
@@ -45,18 +46,21 @@ type NavigationItem = {
 
 type NavigationGroup = {
   label: string;
+  icon: React.ComponentType<{ className?: string }>;
   items: NavigationItem[];
 };
 
 const navigationGroups: NavigationGroup[] = [
   {
     label: "Dashboard",
+    icon: LayoutDashboard,
     items: [
       { name: "Control Tower", href: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
     label: "Operations",
+    icon: Workflow,
     items: [
       { name: "Shipment Requests", href: "/dashboard/shipment-requests", icon: ClipboardList, permission: "shipmentRequests:view", moduleKey: "SHIPMENTS" },
       { name: "Shipments / Job Files", href: "/dashboard/shipments", icon: Ship, permission: "shipments:view", moduleKey: "SHIPMENTS" },
@@ -67,6 +71,7 @@ const navigationGroups: NavigationGroup[] = [
   },
   {
     label: "Sales",
+    icon: TrendingUp,
     items: [
       { name: "Quotations", href: "/dashboard/quotations", icon: ReceiptText, permission: "quotations:view", moduleKey: "QUOTATIONS" },
       { name: "Customers", href: "/dashboard/customers", icon: Users },
@@ -74,12 +79,14 @@ const navigationGroups: NavigationGroup[] = [
   },
   {
     label: "Documents",
+    icon: FileText,
     items: [
       { name: "Document Center", href: "/dashboard/reports/documents", icon: FileText, moduleKey: "DOCUMENTS" },
     ],
   },
   {
     label: "Finance",
+    icon: WalletCards,
     items: [
       { name: "Invoices", href: "/dashboard/invoices", icon: ReceiptText, permission: "invoices:view", moduleKey: "BILLING" },
       { name: "Vendor Bills", href: "/dashboard/vendor-bills", icon: WalletCards, permission: "vendorBills:view", moduleKey: "BILLING" },
@@ -91,6 +98,7 @@ const navigationGroups: NavigationGroup[] = [
   },
   {
     label: "Accounting",
+    icon: BookOpen,
     items: [
       { name: "Ledger Accounts", href: "/dashboard/accounting/ledgers", icon: BookOpen, permission: "ledgers:view", moduleKey: "BILLING" },
       { name: "Opening Balances", href: "/dashboard/accounting/opening-balances", icon: BookOpen, permission: "accounts:manage", moduleKey: "BILLING" },
@@ -99,6 +107,7 @@ const navigationGroups: NavigationGroup[] = [
   },
   {
     label: "Reports",
+    icon: BarChart3,
     items: [
       { name: "Report Center", href: "/dashboard/reports", icon: BarChart3, permission: "reports:view", moduleKey: "REPORTS" },
       { name: "AI Exception Radar", href: "/dashboard/exceptions", icon: Sparkles, permission: "reports:view", moduleKey: "REPORTS" },
@@ -106,6 +115,7 @@ const navigationGroups: NavigationGroup[] = [
   },
   {
     label: "Admin / Settings",
+    icon: Settings,
     items: [
       { name: "Branches", href: "/dashboard/branches", icon: Building2, permission: "branches:view" },
       { name: "Users", href: "/dashboard/users", icon: Users },
@@ -133,13 +143,43 @@ export function AppSidebar({
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const isFirstPathnameRun = useRef(true);
+
+  const isActive = (item: NavigationItem) =>
+    item.href === "/dashboard"
+      ? pathname === item.href
+      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+  const activeSectionLabel =
+    navigationGroups.find((group) => group.items.some(isActive))?.label ?? null;
 
   useEffect(() => {
     const stored = localStorage.getItem("sidebar-collapsed");
     if (stored === "true") {
       setIsCollapsed(true);
     }
+
+    // First load: resume the last section the user had open, falling back to
+    // whichever section contains the current page (e.g. Dashboard on /dashboard).
+    const storedSection = localStorage.getItem("sidebar-open-section");
+    setOpenSection(storedSection ?? activeSectionLabel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // Skip the very first run — the mount effect above already resolved the
+    // initial open section (which may be a remembered one, not the active route).
+    if (isFirstPathnameRun.current) {
+      isFirstPathnameRun.current = false;
+      return;
+    }
+    if (activeSectionLabel) {
+      setOpenSection(activeSectionLabel);
+      localStorage.setItem("sidebar-open-section", activeSectionLabel);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   useEffect(() => {
     const handler = () => setIsMobileOpen((prev) => !prev);
@@ -157,6 +197,18 @@ export function AppSidebar({
     localStorage.setItem("sidebar-collapsed", String(nextValue));
   };
 
+  const toggleSection = (label: string) => {
+    setOpenSection((current) => {
+      const next = current === label ? null : label;
+      if (next) {
+        localStorage.setItem("sidebar-open-section", next);
+      } else {
+        localStorage.removeItem("sidebar-open-section");
+      }
+      return next;
+    });
+  };
+
   const enabledModuleSet = new Set(enabledModules);
 
   const isItemVisible = (item: NavigationItem) =>
@@ -165,11 +217,6 @@ export function AppSidebar({
         ? item.permission.some((permission) => user.permissions?.includes(permission))
         : user.permissions?.includes(item.permission))) &&
     (!item.moduleKey || enabledModuleSet.has(item.moduleKey));
-
-  const isActive = (item: NavigationItem) =>
-    item.href === "/dashboard"
-      ? pathname === item.href
-      : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
   const visibleGroups = navigationGroups
     .map((group) => ({
@@ -298,42 +345,69 @@ export function AppSidebar({
       </div>
 
       <nav className="overflow-y-auto custom-scrollbar px-3 py-4" style={{ maxHeight: "calc(100vh - 4rem)" }}>
-        {visibleGroups.map((group) => (
-          <div key={group.label} className="mb-4">
-            {!isCollapsed ? (
-              <p
-                className="mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-cyan-500/80 transition-all duration-300"
-                data-nav-group={group.label}
+        {visibleGroups.map((group) => {
+          const isOpen = isCollapsed || openSection === group.label;
+          const renderItems = () =>
+            group.items.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setIsMobileOpen(false)}
+                title={isCollapsed ? item.name : undefined}
+                className={cn(
+                  "flex items-center text-sm font-medium text-slate-600 dark:text-[#cbd5e1] transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-950 dark:hover:text-[#ffffff]",
+                  isCollapsed ? "justify-center p-2.5 mx-auto w-10 h-10 rounded-md" : "gap-3 rounded-md px-3 py-2.5",
+                  isActive(item) && (
+                    isCollapsed
+                      ? "bg-slate-950 text-white hover:bg-slate-900 dark:bg-cyan-600 dark:text-[#ffffff] dark:hover:bg-cyan-500"
+                      : "bg-slate-950 text-white hover:bg-slate-900 hover:text-white dark:bg-gradient-to-r dark:from-cyan-600 dark:via-blue-600 dark:to-indigo-600 dark:text-[#ffffff] dark:hover:from-cyan-600 dark:hover:to-indigo-600 dark:shadow-md dark:shadow-cyan-950/20"
+                  )
+                )}
               >
-                {group.label}
-              </p>
-            ) : (
-              <div className="mx-3 my-3 border-b border-slate-100 dark:border-slate-800 transition-all duration-300" />
-            )}
-            <div className="space-y-0.5">
-              {group.items.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setIsMobileOpen(false)}
-                  title={isCollapsed ? item.name : undefined}
-                  className={cn(
-                    "flex items-center text-sm font-medium text-slate-600 dark:text-[#cbd5e1] transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-950 dark:hover:text-[#ffffff]",
-                    isCollapsed ? "justify-center p-2.5 mx-auto w-10 h-10 rounded-md" : "gap-3 rounded-md px-3 py-2.5",
-                    isActive(item) && (
-                      isCollapsed
-                        ? "bg-slate-950 text-white hover:bg-slate-900 dark:bg-cyan-600 dark:text-[#ffffff] dark:hover:bg-cyan-500"
-                        : "bg-slate-950 text-white hover:bg-slate-900 hover:text-white dark:bg-gradient-to-r dark:from-cyan-600 dark:via-blue-600 dark:to-indigo-600 dark:text-[#ffffff] dark:hover:from-cyan-600 dark:hover:to-indigo-600 dark:shadow-md dark:shadow-cyan-950/20"
-                    )
-                  )}
+                <item.icon className={cn("shrink-0 transition-all duration-200", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
+                {!isCollapsed && <span className="flex-1 truncate">{item.name}</span>}
+              </Link>
+            ));
+
+          return (
+            <div key={group.label} className="mb-2">
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => toggleSection(group.label)}
+                  aria-expanded={isOpen}
+                  className="mb-1 flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 transition-colors hover:text-slate-700 dark:text-cyan-500/80 dark:hover:text-cyan-400"
                 >
-                  <item.icon className={cn("shrink-0 transition-all duration-200", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
-                  {!isCollapsed && <span className="flex-1 truncate">{item.name}</span>}
-                </Link>
-              ))}
+                  <span className="flex items-center gap-2">
+                    <group.icon className="h-3.5 w-3.5 shrink-0" />
+                    {group.label}
+                  </span>
+                  <ChevronRight
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                      isOpen && "rotate-90"
+                    )}
+                  />
+                </button>
+              ) : (
+                <div className="mx-3 my-3 border-b border-slate-100 dark:border-slate-800 transition-all duration-300" />
+              )}
+
+              {isCollapsed ? (
+                <div className="space-y-0.5">{renderItems()}</div>
+              ) : (
+                <div
+                  className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+                  style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                >
+                  <div className="overflow-hidden">
+                    <div className="space-y-0.5 pb-1">{renderItems()}</div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
     </aside>
     </>

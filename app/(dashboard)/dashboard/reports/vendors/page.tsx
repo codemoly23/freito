@@ -1,34 +1,31 @@
 import { MetricGrid, ReportFilters, ReportHeader, ReportTable } from "@/components/reports/report-ui";
-import { prisma } from "@/lib/db/prisma";
+import { Button } from "@/components/ui/button";
 import { hasPermission } from "@/lib/permissions/rbac";
 import { requireReportsPage } from "@/lib/reports/access";
 import { getReportDateRange, type ReportSearchParams } from "@/lib/reports/date-range";
 import { decimalNumber, reportDate, reportMoney, statusLabel } from "@/lib/reports/formatters";
+import { getVendorSummaryRows } from "@/lib/reports/vendor-summary";
 
 export default async function VendorsReportPage({ searchParams }: { searchParams: Promise<ReportSearchParams> }) {
-  const { user, companyId } = await requireReportsPage("vendors");
+  const { user } = await requireReportsPage("vendors");
   const params = await searchParams;
   const range = getReportDateRange(params);
-  const financial = hasPermission(user, "reports:financial");
-  const vendors = await prisma.vendor.findMany({
-    where: { companyId, deletedAt: null },
-    select: {
-      name: true, type: true,
-      vendorbill: { where: { deletedAt: null, status: { not: "CANCELLED" }, billDate: { gte: range.from, lte: range.to } }, select: { billNo: true, billDate: true, totalAmount: true, dueAmount: true, exchangeRateToBDT: true } },
-      shipmentworkflowstep: { where: { deletedAt: null, createdAt: { gte: range.from, lte: range.to } }, select: { title: true, status: true, dueDate: true, shipmentjob: { select: { jobNo: true } } } },
-    },
-  });
-  const rows = vendors.map((vendor) => ({
-    ...vendor,
-    billed: vendor.vendorbill.reduce((sum, bill) => sum + decimalNumber(bill.totalAmount) * decimalNumber(bill.exchangeRateToBDT), 0),
-    due: vendor.vendorbill.reduce((sum, bill) => sum + decimalNumber(bill.dueAmount) * decimalNumber(bill.exchangeRateToBDT), 0),
-  })).sort((a, b) => b.billed - a.billed);
+  const { rows, financial } = await getVendorSummaryRows(params);
   const steps = rows.flatMap((vendor) => vendor.shipmentworkflowstep.map((step) => ({ ...step, vendor: vendor.name })));
   const bills = rows.flatMap((vendor) => vendor.vendorbill.map((bill) => ({ ...bill, vendor: vendor.name, amount: decimalNumber(bill.totalAmount) * decimalNumber(bill.exchangeRateToBDT), due: decimalNumber(bill.dueAmount) * decimalNumber(bill.exchangeRateToBDT) })));
 
   return (
     <main className="space-y-6 p-4 lg:p-6">
-      <ReportHeader title="Vendor Report" description="Vendor operational assignments and permission-protected payable summaries." />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ReportHeader title="Vendor Report" description="Vendor operational assignments and permission-protected payable summaries." />
+        {hasPermission(user, "exports:csv") ? (
+          <Button asChild size="sm" variant="outline">
+            <a download href={`/api/exports/reports/vendors?from=${range.fromInput}&to=${range.toInput}`}>
+              Download CSV
+            </a>
+          </Button>
+        ) : null}
+      </div>
       <ReportFilters from={range.fromInput} to={range.toInput} />
       <MetricGrid metrics={[
         { label: "Active vendors", value: rows.length },

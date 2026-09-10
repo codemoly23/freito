@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { MetricGrid, ReportFilters, ReportHeader, ReportTable } from "@/components/reports/report-ui";
 import { prisma } from "@/lib/db/prisma";
 import { requireReportsPage } from "@/lib/reports/access";
-import { enumParam, firstParam, getReportDateRange, type ReportSearchParams } from "@/lib/reports/date-range";
+import { type ReportSearchParams } from "@/lib/reports/date-range";
 import { reportDate, statusLabel } from "@/lib/reports/formatters";
 import { getManagementDashboardSummary } from "@/lib/reports/dashboard-summary";
+import { getOperationsShipmentRows } from "@/lib/reports/operations-export";
+import { hasPermission } from "@/lib/permissions/rbac";
 
-const shipmentTypes = ["IMPORT", "EXPORT"] as const;
 const modes = ["SEA", "AIR", "LAND"] as const;
+const shipmentTypes = ["IMPORT", "EXPORT"] as const;
 const loadTypes = ["FCL", "LCL", "AIR_CARGO", "TRUCK"] as const;
 const scopes = ["PORT_TO_PORT", "DOOR_TO_PORT", "PORT_TO_DOOR", "DOOR_TO_DOOR"] as const;
 const financeStatuses = ["OPEN", "CLOSE_READY", "LOCKED"] as const;
@@ -19,58 +21,23 @@ export default async function OperationsReportPage({
 }: {
   searchParams: Promise<ReportSearchParams>;
 }) {
-  const { companyId, branchWhere } = await requireReportsPage("operations");
+  const { companyId, user } = await requireReportsPage("operations");
   const params = await searchParams;
-  const range = getReportDateRange(params);
-  const shipmentType = enumParam(params.shipmentType, shipmentTypes);
-  const transportMode = enumParam(params.transportMode, modes);
-  const loadType = enumParam(params.loadType, loadTypes);
-  const serviceScope = enumParam(params.serviceScope, scopes);
-  const financeCloseStatus = enumParam(params.financeCloseStatus, financeStatuses);
-  const customerId = firstParam(params.customerId);
-  const currentStatus = firstParam(params.status);
+  const {
+    shipments,
+    shipmentWhere,
+    range,
+    shipmentType,
+    transportMode,
+    loadType,
+    serviceScope,
+    financeCloseStatus,
+    customerId,
+    currentStatus,
+  } = await getOperationsShipmentRows(params);
   const now = new Date();
 
-  const shipmentWhere = {
-    companyId,
-    deletedAt: null,
-    ...branchWhere,
-    createdAt: { gte: range.from, lte: range.to },
-    ...(shipmentType ? { shipmentType: shipmentType as never } : {}),
-    ...(transportMode ? { transportMode: transportMode as never } : {}),
-    ...(loadType ? { loadType: loadType as never } : {}),
-    ...(serviceScope ? { serviceScope: serviceScope as never } : {}),
-    ...(financeCloseStatus ? { financeCloseStatus: financeCloseStatus as never } : {}),
-    ...(customerId ? { customerId } : {}),
-    ...(currentStatus ? { currentStatus } : {}),
-  };
-
-  const [shipments, customers, modeGroups, scopeGroups, delayedSteps, completedSteps, summary] = await Promise.all([
-    prisma.shipmentjob.findMany({
-      where: shipmentWhere,
-      select: {
-        id: true,
-        jobNo: true,
-        currentStatus: true,
-        shipmentType: true,
-        transportMode: true,
-        loadType: true,
-        serviceScope: true,
-        etd: true,
-        eta: true,
-        financeCloseStatus: true,
-        deliveredAt: true,
-        proofOfDeliveryAt: true,
-        closedAt: true,
-        createdAt: true,
-        customer: { select: { name: true } },
-        user_shipmentjob_createdByIdTouser: { select: { name: true } },
-        user_shipmentjob_assignedToIdTouser: { select: { name: true } },
-        _count: { select: { shipmentworkflowstep: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
+  const [customers, modeGroups, scopeGroups, delayedSteps, completedSteps, summary] = await Promise.all([
     prisma.customer.findMany({ where: { companyId, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.shipmentjob.groupBy({ by: ["transportMode"], where: shipmentWhere, _count: { _all: true } }),
     prisma.shipmentjob.groupBy({ by: ["serviceScope"], where: shipmentWhere, _count: { _all: true } }),
@@ -94,7 +61,16 @@ export default async function OperationsReportPage({
 
   return (
     <main className="space-y-6 p-4 lg:p-6">
-      <ReportHeader title="Operations Report" description="Shipment workload, delay signals, service scope, and finance close readiness." />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ReportHeader title="Operations Report" description="Shipment workload, delay signals, service scope, and finance close readiness." />
+        {hasPermission(user, "exports:csv") ? (
+          <Button asChild size="sm" variant="outline">
+            <a download href={`/api/exports/reports/operations?from=${range.fromInput}&to=${range.toInput}`}>
+              Download CSV
+            </a>
+          </Button>
+        ) : null}
+      </div>
       <ReportFilters from={range.fromInput} to={range.toInput}>
         <select aria-label="Customer" name="customerId" defaultValue={customerId ?? ""} className="h-10 rounded-md border border-slate-200 px-3 text-sm"><option value="">All customers</option>{customers.map((customer) => <option value={customer.id} key={customer.id}>{customer.name}</option>)}</select>
         <select aria-label="Transport mode" name="transportMode" defaultValue={transportMode ?? ""} className="h-10 rounded-md border border-slate-200 px-3 text-sm"><option value="">All modes</option>{modes.map((value) => <option key={value}>{value}</option>)}</select>

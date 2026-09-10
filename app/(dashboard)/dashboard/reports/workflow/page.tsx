@@ -7,13 +7,15 @@ import { requireReportsPage } from "@/lib/reports/access";
 import { enumParam, firstParam, getReportDateRange, type ReportSearchParams } from "@/lib/reports/date-range";
 import { reportDate, statusLabel } from "@/lib/reports/formatters";
 import { getDeliveryReleaseSummary } from "@/lib/reports/delivery-summary";
+import { deriveDeliveryStatus, getWorkflowDeliveryRows } from "@/lib/reports/workflow-export";
+import { hasPermission } from "@/lib/permissions/rbac";
 
 const statuses = ["NOT_STARTED", "IN_PROGRESS", "WAITING", "COMPLETED", "BLOCKED", "CANCELLED"] as const;
 const phases = ["ORIGIN", "CARRIER", "DESTINATION", "DELIVERY", "CLOSURE"] as const;
 const handlers = ["INTERNAL_EMPLOYEE", "EXTERNAL_AGENT", "VENDOR", "CF_AGENT", "TRUCK_PROVIDER", "DESTINATION_AGENT"] as const;
 
 export default async function WorkflowReportPage({ searchParams }: { searchParams: Promise<ReportSearchParams> }) {
-  const { companyId, branchWhere } = await requireReportsPage("workflow");
+  const { companyId, branchWhere, user } = await requireReportsPage("workflow");
   const params = await searchParams;
   const range = getReportDateRange(params);
   const status = enumParam(params.status, statuses);
@@ -33,7 +35,7 @@ export default async function WorkflowReportPage({ searchParams }: { searchParam
     ...(assignedUserId ? { assignedUserId } : {}),
     ...(vendorId ? { vendorId } : {}),
   };
-  const [steps, users, vendors, groups, deliverySummary, deliveryShipments] = await Promise.all([
+  const [steps, users, vendors, groups, deliverySummary, { deliveryShipments }] = await Promise.all([
     prisma.shipmentworkflowstep.findMany({
       where,
       select: {
@@ -57,41 +59,7 @@ export default async function WorkflowReportPage({ searchParams }: { searchParam
     prisma.vendor.findMany({ where: { companyId, deletedAt: null, status: "ACTIVE" }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.shipmentworkflowstep.groupBy({ by: ["status"], where, _count: { _all: true } }),
     getDeliveryReleaseSummary(params, "workflow"),
-    prisma.shipmentjob.findMany({
-      where: {
-        companyId,
-        deletedAt: null,
-        ...branchWhere,
-        createdAt: { gte: range.from, lte: range.to },
-      },
-      select: {
-        id: true,
-        jobNo: true,
-        serviceScope: true,
-        operationsStatus: true,
-        financeCloseStatus: true,
-        deliveredAt: true,
-        proofOfDeliveryAt: true,
-        closedAt: true,
-        customer: { select: { name: true } },
-        cargoreleasechecklist: {
-          select: {
-            deliveryOrderReleased: true,
-            customsReady: true,
-            gatePassNo: true,
-            cargoReleased: true,
-            cargoReleasedAt: true,
-            deliveryDateTime: true,
-            outForDeliveryAt: true,
-            delivered: true,
-            deliveredAt: true,
-            verifiedAt: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
+    getWorkflowDeliveryRows(params),
   ]);
   const counts = new Map(groups.map((group) => [group.status, group._count._all]));
   const overdue = steps.filter((step) => step.dueDate && step.dueDate < now && !["COMPLETED", "CANCELLED"].includes(step.status));
@@ -110,7 +78,16 @@ export default async function WorkflowReportPage({ searchParams }: { searchParam
 
   return (
     <main className="space-y-6 p-4 lg:p-6">
-      <ReportHeader title="Workflow / Delivery Report" description="Delivery order, gate pass, cargo release, POD, and job closeout progress." />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ReportHeader title="Workflow / Delivery Report" description="Delivery order, gate pass, cargo release, POD, and job closeout progress." />
+        {hasPermission(user, "exports:csv") ? (
+          <Button asChild size="sm" variant="outline">
+            <a download href={`/api/exports/reports/workflow?from=${range.fromInput}&to=${range.toInput}`}>
+              Download CSV
+            </a>
+          </Button>
+        ) : null}
+      </div>
       <ReportFilters from={range.fromInput} to={range.toInput}>
         <select aria-label="Workflow status" name="status" defaultValue={status ?? ""} className="h-10 rounded-md border border-slate-200 px-3 text-sm"><option value="">All statuses</option>{statuses.map((value) => <option key={value}>{value}</option>)}</select>
         <select aria-label="Workflow phase" name="phase" defaultValue={phase ?? ""} className="h-10 rounded-md border border-slate-200 px-3 text-sm"><option value="">All phases</option>{phases.map((value) => <option key={value}>{value}</option>)}</select>
@@ -139,16 +116,15 @@ export default async function WorkflowReportPage({ searchParams }: { searchParam
         { label: "Job Closed", value: deliverySummary.jobClosed },
       ]} />
       <ReportTable title="Delivery, POD, and closeout table" headers={["Job / File No", "Customer", "Service Scope", "Delivery", "Delivery Order", "Gate Pass", "POD", "Cargo Released Date", "Delivered Date", "Closed Date", "Finance Close", "Open Record"]} empty="No delivery, POD, or closeout records found for this period." rows={deliveryShipments.map((shipment) => {
-        const checklist = shipment.cargoreleasechecklist;
-        const deliveredDate = shipment.deliveredAt ?? checklist?.deliveredAt ?? null;
+        const { checklist, deliveredDate, deliveryStatus, deliveryOrder, gatePass, pod } = deriveDeliveryStatus(shipment);
         return [
           shipment.jobNo,
           shipment.customer.name,
           statusLabel(shipment.serviceScope),
-          checklist?.outForDeliveryAt ? "Out for delivery" : deliveredDate ? "Delivered" : checklist?.deliveryDateTime ? "Scheduled" : "Pending",
-          checklist?.deliveryOrderReleased ? "Released" : "Pending",
-          checklist?.gatePassNo ? checklist.gatePassNo : "Pending",
-          shipment.proofOfDeliveryAt ? "Verified" : deliveredDate ? "Pending" : "-",
+          deliveryStatus,
+          deliveryOrder,
+          gatePass,
+          pod,
           reportDate(checklist?.cargoReleasedAt),
           reportDate(deliveredDate),
           reportDate(shipment.closedAt),

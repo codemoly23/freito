@@ -3,40 +3,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MetricGrid, ReportFilters, ReportHeader, ReportTable } from "@/components/reports/report-ui";
 import { prisma } from "@/lib/db/prisma";
+import { hasPermission } from "@/lib/permissions/rbac";
 import { requireReportsPage } from "@/lib/reports/access";
-import { enumParam, firstParam, getReportDateRange, type ReportSearchParams } from "@/lib/reports/date-range";
+import { type ReportSearchParams } from "@/lib/reports/date-range";
 import { reportDate, reportMoney, reportPercent, statusLabel } from "@/lib/reports/formatters";
-
-const statuses = ["DRAFT", "SUBMITTED", "UNDER_REVIEW", "QUOTED", "REVISION_REQUESTED", "ACCEPTED", "REJECTED", "CONVERTED", "CANCELLED"] as const;
-const modes = ["SEA", "AIR", "LAND"] as const;
-const scopes = ["PORT_TO_PORT", "DOOR_TO_PORT", "PORT_TO_DOOR", "DOOR_TO_DOOR"] as const;
+import {
+  getShipmentRequestsReport,
+  shipmentRequestModes as modes,
+  shipmentRequestScopes as scopes,
+  shipmentRequestStatuses as statuses,
+} from "@/lib/reports/requests-export";
 
 export default async function RequestsReportPage({ searchParams }: { searchParams: Promise<ReportSearchParams> }) {
-  const { companyId, branchWhere } = await requireReportsPage("requests");
+  const { user, companyId } = await requireReportsPage("requests");
   const params = await searchParams;
-  const range = getReportDateRange(params);
-  const status = enumParam(params.status, statuses);
-  const transportMode = enumParam(params.transportMode, modes);
-  const serviceScope = enumParam(params.serviceScope, scopes);
-  const customerId = firstParam(params.customerId);
-  const where = {
-    companyId, deletedAt: null, ...branchWhere, createdAt: { gte: range.from, lte: range.to },
-    ...(status ? { status: status as never } : {}),
-    ...(transportMode ? { transportMode: transportMode as never } : {}),
-    ...(serviceScope ? { serviceScope: serviceScope as never } : {}),
-    ...(customerId ? { customerId } : {}),
-  };
-  const [requests, customers, groups] = await Promise.all([
-    prisma.shipmentrequest.findMany({
-      where,
-      select: {
-        id: true, requestNo: true, status: true, transportMode: true, serviceScope: true,
-        createdAt: true, submittedAt: true, quotedAt: true, acceptedAt: true, convertedAt: true,
-        revisionMessage: true, customer: { select: { name: true } },
-        quotation: { where: { deletedAt: null }, orderBy: { createdAt: "desc" }, take: 1, select: { totalSellAmount: true } },
-      },
-      orderBy: { createdAt: "desc" }, take: 100,
-    }),
+  const { requests, where, range, status, transportMode, serviceScope, customerId } = await getShipmentRequestsReport(params);
+  const [customers, groups] = await Promise.all([
     prisma.customer.findMany({ where: { companyId, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.shipmentrequest.groupBy({ by: ["status"], where, _count: { _all: true } }),
   ]);
@@ -48,7 +30,19 @@ export default async function RequestsReportPage({ searchParams }: { searchParam
 
   return (
     <main className="space-y-6 p-4 lg:p-6">
-      <ReportHeader title="Shipment Request Report" description="Portal and company request pipeline, response time, and conversion performance." />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ReportHeader title="Shipment Request Report" description="Portal and company request pipeline, response time, and conversion performance." />
+        {hasPermission(user, "exports:csv") ? (
+          <Button asChild size="sm" variant="outline">
+            <a
+              download
+              href={`/api/exports/reports/requests?from=${range.fromInput}&to=${range.toInput}${status ? `&status=${status}` : ""}${transportMode ? `&transportMode=${transportMode}` : ""}${serviceScope ? `&serviceScope=${serviceScope}` : ""}${customerId ? `&customerId=${customerId}` : ""}`}
+            >
+              Download CSV
+            </a>
+          </Button>
+        ) : null}
+      </div>
       <ReportFilters from={range.fromInput} to={range.toInput}>
         <select aria-label="Request status" name="status" defaultValue={status ?? ""} className="h-10 rounded-md border border-slate-200 px-3 text-sm"><option value="">All statuses</option>{statuses.map((value) => <option key={value}>{value}</option>)}</select>
         <select aria-label="Service scope" name="serviceScope" defaultValue={serviceScope ?? ""} className="h-10 rounded-md border border-slate-200 px-3 text-sm"><option value="">All scopes</option>{scopes.map((value) => <option key={value}>{statusLabel(value)}</option>)}</select>
