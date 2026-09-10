@@ -16,6 +16,13 @@ import {
 } from "@/lib/actions/helpers";
 import { requirePlatformPermission } from "@/lib/permissions/rbac";
 import { seedDefaultChartOfAccounts } from "@/lib/accounting/seed-chart-of-accounts";
+import { hashPassword } from "@/lib/auth/password";
+import { generateClientPortalPassword } from "@/lib/client-portal/credentials";
+import {
+  COMPANY_ROLE_CODES,
+  COMPANY_ROLE_NAMES,
+  COMPANY_ROLE_PERMISSIONS,
+} from "@/lib/permissions/company-role-permissions";
 
 const moduleKeys = [
   "SHIPMENTS",
@@ -184,11 +191,17 @@ export async function savePlatformCompany(
     throw error;
   }
 
+  let provisioning: { adminEmail: string; adminPassword: string } | null = null;
   if (!parsedId) {
     try {
       await seedDefaultChartOfAccounts(company.id);
     } catch (chartOfAccountsError) {
       console.error("Failed to seed chart of accounts", chartOfAccountsError);
+    }
+    try {
+      provisioning = await provisionDefaultCompanyAccess(company.id, company.email);
+    } catch (provisioningError) {
+      console.error("Failed to provision default roles/branch/admin for new company", provisioningError);
     }
   }
 
@@ -217,7 +230,105 @@ export async function savePlatformCompany(
   }
 
   revalidatePlatformPaths();
-  return successState(parsedId ? "Company updated." : "Company created.");
+  if (parsedId) return successState("Company updated.");
+  if (!provisioning) {
+    return successState(
+      "Company created, but setting up its default roles/branch/admin login failed -- check server logs and provision manually before handing this off.",
+    );
+  }
+  return successState(
+    `Company created. First login -- Email: ${provisioning.adminEmail} / Temporary password: ${provisioning.adminPassword}. This password is shown once only -- copy it now and share it with the company's admin yourself.`,
+  );
+}
+
+/**
+ * Everything a brand-new company needs before anyone can actually sign in
+ * and use it: a default branch, its own set of company-scoped roles (with
+ * the same permission grants every other company gets -- see
+ * lib/permissions/company-role-permissions.ts, shared with prisma/seed.ts),
+ * and a first Company Admin user. Without this, a platform-created company
+ * is an unusable empty shell -- there is no self-service signup, so this is
+ * the only path a new tenant ever gets provisioned through.
+ */
+async function provisionDefaultCompanyAccess(companyId: string, contactEmail: string | null) {
+  const now = new Date();
+
+  const branch = await prisma.branch.create({
+    data: {
+      id: randomUUID(),
+      companyId,
+      code: "HEAD_OFFICE",
+      name: "Head Office",
+      isActive: true,
+      updatedAt: now,
+    },
+  });
+
+  const allPermissions = await prisma.permission.findMany({ select: { id: true, key: true } });
+  const permissionIdByKey = new Map(allPermissions.map((permission) => [permission.key, permission.id]));
+
+  const roleIdByCode = new Map<string, string>();
+  for (const code of COMPANY_ROLE_CODES) {
+    const role = await prisma.role.create({
+      data: {
+        id: randomUUID(),
+        companyId,
+        code,
+        name: COMPANY_ROLE_NAMES[code],
+        isSystem: true,
+        updatedAt: now,
+      },
+    });
+    roleIdByCode.set(code, role.id);
+
+    const permissionIds = COMPANY_ROLE_PERMISSIONS[code]
+      .map((key) => permissionIdByKey.get(key))
+      .filter((id): id is string => Boolean(id));
+    if (permissionIds.length) {
+      await prisma.rolepermission.createMany({
+        data: permissionIds.map((permissionId) => ({ id: randomUUID(), roleId: role.id, permissionId })),
+      });
+    }
+  }
+
+  // The company's own contact email doubles as its first admin's login,
+  // matching how the demo fixtures are set up -- unless it's blank or
+  // already registered to another user, in which case fall back to a
+  // generated address the platform admin can change from Users afterward.
+  let adminEmail = contactEmail?.trim().toLowerCase() || "";
+  if (adminEmail) {
+    const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (existing) adminEmail = "";
+  }
+  if (!adminEmail) {
+    adminEmail = `admin+${randomUUID().slice(0, 8)}@placeholder.freito.local`;
+  }
+
+  const adminPassword = generateClientPortalPassword();
+  const passwordHash = await hashPassword(adminPassword);
+
+  const adminUser = await prisma.user.create({
+    data: {
+      id: randomUUID(),
+      companyId,
+      name: "Company Admin",
+      email: adminEmail,
+      passwordHash,
+      status: "ACTIVE",
+      scope: "COMPANY",
+      updatedAt: now,
+    },
+  });
+
+  await prisma.userrole.create({
+    data: { id: randomUUID(), userId: adminUser.id, roleId: roleIdByCode.get("COMPANY_ADMIN")! },
+  });
+
+  await prisma.userbranchmembership.create({
+    data: { id: randomUUID(), userId: adminUser.id, branchId: branch.id, isDefault: true, updatedAt: now },
+  });
+
+  return { adminEmail, adminPassword };
 }
 
 export async function initializeCompanyAccounting(formData: FormData) {
