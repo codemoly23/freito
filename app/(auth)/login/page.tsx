@@ -61,7 +61,7 @@ export default async function LoginPage() {
           <CardHeader>
             <div className="relative mb-4 h-8 w-32">
               <Image
-                src="/images/freito-logo.png"
+                src="/images/freito-logo.svg"
                 alt="FreightFast"
                 fill
                 priority

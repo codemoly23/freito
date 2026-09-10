@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db/prisma";
 import { rolePermissionSchema } from "@/lib/validators/admin";
+import { SEED_ONLY_PERMISSION_KEYS } from "@/lib/permissions/seed-only-permissions";
 import {
   type ActionState,
   audit,
@@ -17,6 +18,8 @@ import {
 
 const companySafePermissions = new Set([
   "dashboard:view",
+  "ai:configure",
+  "ai:use",
   "branding:manage",
   "branches:view",
   "branches:manage",
@@ -70,6 +73,7 @@ const companySafePermissions = new Set([
   "reports:financial",
   "reports:operations",
   "reports:export",
+  "reports:accounting",
   "tasks:list",
   "tasks:view",
   "tasks:create",
@@ -104,6 +108,27 @@ const companySafePermissions = new Set([
   "share:create",
   "share:send",
   "client_portal:view",
+  "approvalPolicies:manage",
+  "audit_logs:view",
+  "clientPortalAccounts:view",
+  "clientPortalAccounts:create",
+  "clientPortalAccounts:update",
+  "clientPortalAccounts:delete",
+  "clientPortalAccounts:resetPassword",
+  "companies:manage",
+  "documentTemplates:manage",
+  "payments:approve",
+  "vendorBills:approve",
+  "shipmentRequests:view",
+  "shipmentRequests:create",
+  "shipmentRequests:update",
+  "shipmentRequests:delete",
+  "shipmentRequests:quote",
+  "shipmentRequests:convert",
+  "shipmentWorkflow:view",
+  "shipmentWorkflow:update",
+  "shipmentWorkflow:assign",
+  "shipmentWorkflow:delete",
 ]);
 
 function canAssignPermission(
@@ -163,13 +188,40 @@ export async function updateRolePermissions(
     );
   }
 
+  // This form only ever offers company-admin-assignable permissions as
+  // checkboxes (companySafePermissions), so a plain "wipe and recreate from
+  // the submitted list" would silently strip any seed-only grant (e.g.
+  // companies:switch) the role already holds. Preserve those by unioning
+  // them back in — they were never part of what this save is allowed to
+  // change in the first place.
+  const existingRolePermissions = await prisma.rolepermission.findMany({
+    where: { roleId: role.id },
+    select: { permissionId: true, permission: { select: { key: true } } },
+  });
+  const preservedPermissionIds = existingRolePermissions
+    .filter((rp) => !companySafePermissions.has(rp.permission.key))
+    .map((rp) => rp.permissionId);
+  const finalPermissionIds = [...new Set([...parsed.data.permissionIds, ...preservedPermissionIds])];
+
+  // Refuse to let an admin strip "roles:manage" from the very role they're
+  // currently signed in as -- that would lock them out of this page with no
+  // in-app way back in (would need a direct database fix). Editing another
+  // role's roles:manage grant is unaffected.
+  const rolesManageRow = existingRolePermissions.find((rp) => rp.permission.key === "roles:manage");
+  const actorHoldsThisRole = user.roles?.includes(role.code) ?? false;
+  if (rolesManageRow && actorHoldsThisRole && !finalPermissionIds.includes(rolesManageRow.permissionId)) {
+    return validationError(
+      'You cannot remove "roles:manage" from your own current role -- this would lock you out of Roles & Permissions. Ask another admin with this permission to make the change instead.',
+    );
+  }
+
   await prisma.role.update({
     where: { id: role.id },
     data: {
       updatedAt: new Date(),
       rolepermission: {
         deleteMany: {},
-        create: parsed.data.permissionIds.map((permissionId) => ({
+        create: finalPermissionIds.map((permissionId) => ({
           id: randomUUID(),
           permissionId,
         })),

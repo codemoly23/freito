@@ -95,7 +95,7 @@ export function InvoiceForm({
 }) {
   const [state, formAction] = useActionState(action, initialState);
   const formRef = useRef<HTMLFormElement>(null);
-  const lines = (invoice?.lines as BillingLine[] | undefined) ?? [];
+  const lines = (invoice?.invoiceline as BillingLine[] | undefined) ?? [];
   const [sourceLines, setSourceLines] = useState<BillingLine[]>(lines);
   const [lineVersion, setLineVersion] = useState(0);
 
@@ -188,7 +188,7 @@ export function VendorBillForm({
   shipments: ShipmentOption[];
 }) {
   const [state, formAction] = useActionState(action, initialState);
-  const lines = (bill?.lines as BillingLine[] | undefined) ?? [];
+  const lines = (bill?.vendorbillline as BillingLine[] | undefined) ?? [];
   return (
     <form action={formAction} className="space-y-5">
       <FormAlert state={state} />

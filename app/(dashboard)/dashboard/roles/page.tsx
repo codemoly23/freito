@@ -1,6 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 import { RolePermissionsForm } from "@/components/forms/admin-action-forms";
 import { updateRolePermissions } from "@/lib/actions/roles";
+import { SEED_ONLY_PERMISSION_KEYS } from "@/lib/permissions/seed-only-permissions";
 import { prisma } from "@/lib/db/prisma";
 import { requirePermission } from "@/lib/permissions/rbac";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +27,7 @@ export default async function RolesPage() {
       orderBy: [{ companyId: "asc" }, { code: "asc" }],
     }),
     prisma.permission.findMany({
-      where: { key: { not: { startsWith: "platform:" } } },
+      where: { key: { not: { startsWith: "platform:" }, notIn: SEED_ONLY_PERMISSION_KEYS } },
       orderBy: { key: "asc" },
     }),
   ]);

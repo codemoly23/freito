@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { GlobalSearch } from "@/components/global-search";
+import { CompanySwitcher } from "@/components/company-switcher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,8 @@ type DashboardHeaderProps = {
   unreadNotificationCount?: number;
   showSearch?: boolean;
   canUseAiSearch?: boolean;
+  switchableCompanies?: { id: string; name: string }[];
+  activeCompanyId?: string | null;
 };
 
 function initials(name?: string | null) {
@@ -47,6 +50,8 @@ export function DashboardHeader({
   unreadNotificationCount = 0,
   showSearch = false,
   canUseAiSearch = false,
+  switchableCompanies = [],
+  activeCompanyId = null,
 }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:px-6">
@@ -69,6 +74,8 @@ export function DashboardHeader({
       </div>
 
       {showSearch ? <GlobalSearch canUseAi={canUseAiSearch} /> : null}
+
+      <CompanySwitcher companies={switchableCompanies} activeCompanyId={activeCompanyId} />
 
       {notificationsHref ? (
         <Button asChild variant="outline" size="icon">

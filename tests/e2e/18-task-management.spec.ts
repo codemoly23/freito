@@ -15,7 +15,7 @@ test.describe("Phase 8H Task Management and Team Collaboration", () => {
     test.setTimeout(90_000);
     const admin = await createCompanyAdminSession(browser);
     const title = generateTestName("Shipment follow-up task");
-    const operationsAssignee = "Operations Officer";
+    const operationsAssignee = "Operations Manager";
     try {
       await admin.page.goto("/dashboard/tasks");
       await expect(admin.page.getByRole("heading", { name: "Tasks", exact: true })).toBeVisible();
@@ -108,7 +108,7 @@ test.describe("Phase 8H Task Management and Team Collaboration", () => {
     const admin = await createCompanyAdminSession(browser);
     try {
       await admin.page.goto(`/dashboard/tasks/${taskId}`);
-      await expect(admin.page.getByText("This page could not be found.")).toBeVisible();
+      await expect(admin.page.getByText("Page not found")).toBeVisible();
     } finally {
       await admin.context.close();
       await connection.query("DELETE FROM Task WHERE id = ?", [taskId]);

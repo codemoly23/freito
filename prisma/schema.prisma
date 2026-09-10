@@ -27,21 +27,21 @@ model account {
 }
 
 model approvalpolicy {
-  id                   String    @id
+  id                   String                      @id
   companyId            String
   documentType         approvalpolicy_documentType
   name                 String
   branchId             String?
-  thresholdAmountBDT   Decimal   @db.Decimal(14, 2)
-  approverRoleSequence String    @db.Text
-  isActive             Boolean   @default(false)
+  thresholdAmountBDT   Decimal                     @db.Decimal(14, 2)
+  approverRoleSequence String                      @db.Text
+  isActive             Boolean                     @default(false)
   createdById          String?
-  createdAt            DateTime  @default(now())
+  createdAt            DateTime                    @default(now())
   updatedAt            DateTime
   deletedAt            DateTime?
-  company              company           @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ApprovalPolicy_companyId_fkey")
-  branch               branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull, map: "ApprovalPolicy_branchId_fkey")
-  user                 user?             @relation(fields: [createdById], references: [id], map: "ApprovalPolicy_createdById_fkey")
+  company              company                     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ApprovalPolicy_companyId_fkey")
+  branch               branch?                     @relation(fields: [branchId], references: [id], onDelete: SetNull, map: "ApprovalPolicy_branchId_fkey")
+  user                 user?                       @relation(fields: [createdById], references: [id], map: "ApprovalPolicy_createdById_fkey")
   approvalrequest      approvalrequest[]
 
   @@unique([companyId, documentType, branchId], map: "ApprovalPolicy_companyId_documentType_branchId_key")
@@ -49,27 +49,27 @@ model approvalpolicy {
 }
 
 model approvalrequest {
-  id               String    @id
+  id               String                      @id
   companyId        String
   branchId         String
   policyId         String
   documentType     approvalpolicy_documentType
   vendorBillId     String?
   paymentId        String?
-  status           approvalrequest_status @default(PENDING)
-  currentSequence  Int       @default(1)
-  amountBDT        Decimal   @db.Decimal(14, 2)
+  status           approvalrequest_status      @default(PENDING)
+  currentSequence  Int                         @default(1)
+  amountBDT        Decimal                     @db.Decimal(14, 2)
   submittedById    String
-  submittedAt      DateTime  @default(now())
+  submittedAt      DateTime                    @default(now())
   decidedAt        DateTime?
-  createdAt        DateTime  @default(now())
+  createdAt        DateTime                    @default(now())
   updatedAt        DateTime
-  company          company          @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ApprovalRequest_companyId_fkey")
-  branch           branch           @relation(fields: [branchId], references: [id], map: "ApprovalRequest_branchId_fkey")
-  approvalpolicy   approvalpolicy   @relation(fields: [policyId], references: [id], map: "ApprovalRequest_policyId_fkey")
-  vendorbill       vendorbill?      @relation(fields: [vendorBillId], references: [id], onDelete: Cascade, map: "ApprovalRequest_vendorBillId_fkey")
-  payment          payment?         @relation(fields: [paymentId], references: [id], onDelete: Cascade, map: "ApprovalRequest_paymentId_fkey")
-  user             user             @relation(fields: [submittedById], references: [id], map: "ApprovalRequest_submittedById_fkey")
+  company          company                     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ApprovalRequest_companyId_fkey")
+  branch           branch                      @relation(fields: [branchId], references: [id], map: "ApprovalRequest_branchId_fkey")
+  approvalpolicy   approvalpolicy              @relation(fields: [policyId], references: [id], map: "ApprovalRequest_policyId_fkey")
+  vendorbill       vendorbill?                 @relation(fields: [vendorBillId], references: [id], onDelete: Cascade, map: "ApprovalRequest_vendorBillId_fkey")
+  payment          payment?                    @relation(fields: [paymentId], references: [id], onDelete: Cascade, map: "ApprovalRequest_paymentId_fkey")
+  user             user                        @relation(fields: [submittedById], references: [id], map: "ApprovalRequest_submittedById_fkey")
   approvalstep     approvalstep[]
   approvaldecision approvaldecision[]
 
@@ -79,16 +79,16 @@ model approvalrequest {
 }
 
 model approvalstep {
-  id               String    @id
+  id               String              @id
   requestId        String
   sequence         Int
   approverRoleCode role_code
   status           approvalstep_status @default(PENDING)
   decidedById      String?
   decidedAt        DateTime?
-  createdAt        DateTime  @default(now())
-  approvalrequest  approvalrequest    @relation(fields: [requestId], references: [id], onDelete: Cascade, map: "ApprovalStep_requestId_fkey")
-  user             user?              @relation(fields: [decidedById], references: [id], map: "ApprovalStep_decidedById_fkey")
+  createdAt        DateTime            @default(now())
+  approvalrequest  approvalrequest     @relation(fields: [requestId], references: [id], onDelete: Cascade, map: "ApprovalStep_requestId_fkey")
+  user             user?               @relation(fields: [decidedById], references: [id], map: "ApprovalStep_decidedById_fkey")
   approvaldecision approvaldecision[]
 
   @@unique([requestId, sequence], map: "ApprovalStep_requestId_sequence_key")
@@ -96,16 +96,16 @@ model approvalstep {
 }
 
 model approvaldecision {
-  id              String   @id
+  id              String                    @id
   requestId       String
   stepId          String
   decidedById     String
   decision        approvaldecision_decision
-  remarks         String?  @db.Text
-  createdAt       DateTime @default(now())
-  approvalrequest approvalrequest @relation(fields: [requestId], references: [id], onDelete: Cascade, map: "ApprovalDecision_requestId_fkey")
-  approvalstep    approvalstep    @relation(fields: [stepId], references: [id], onDelete: Cascade, map: "ApprovalDecision_stepId_fkey")
-  user            user            @relation(fields: [decidedById], references: [id], map: "ApprovalDecision_decidedById_fkey")
+  remarks         String?                   @db.Text
+  createdAt       DateTime                  @default(now())
+  approvalrequest approvalrequest           @relation(fields: [requestId], references: [id], onDelete: Cascade, map: "ApprovalDecision_requestId_fkey")
+  approvalstep    approvalstep              @relation(fields: [stepId], references: [id], onDelete: Cascade, map: "ApprovalDecision_stepId_fkey")
+  user            user                      @relation(fields: [decidedById], references: [id], map: "ApprovalDecision_decidedById_fkey")
 
   @@index([requestId], map: "ApprovalDecision_requestId_idx")
 }
@@ -386,6 +386,10 @@ model company {
   subscriptionEndsAt            DateTime?
   subscriptionStatus            company_subscriptionStatus      @default(TRIAL)
   trialEndsAt                   DateTime?
+  booksLockedThrough            DateTime?
+  baseCurrency                  company_baseCurrency            @default(BDT)
+  country                       String?
+  booksOpeningDate              DateTime?
   portalCodePrefix              String?
   portalDisplayName             String?
   portalEnabled                 Boolean                         @default(false)
@@ -426,6 +430,9 @@ model company {
   invoice                       invoice[]
   invoiceline                   invoiceline[]
   invoicesequence               invoicesequence[]
+  journalentry                  journalentry[]
+  ledgeraccount                 ledgeraccount[]
+  ledgergroup                   ledgergroup[]
   notification                  notification[]
   notificationdelivery          notificationdelivery[]
   notificationoptout            notificationoptout[]
@@ -453,6 +460,7 @@ model company {
   taskcomment                   taskcomment[]
   taskrecurrence                taskrecurrence[]
   user                          user[]
+  usercompanyaccess             usercompanyaccess[]
   userdashboardlayout           userdashboardlayout[]
   vendor                        vendor[]
   vendorbill                    vendorbill[]
@@ -566,6 +574,7 @@ model customer {
   customercontact               customercontact[]
   customerportalactivationtoken customerportalactivationtoken[]
   invoice                       invoice[]
+  ledgeraccount                 ledgeraccount?
   payment                       payment[]
   quotation                     quotation[]
   shipmentcostitem              shipmentcostitem[]
@@ -617,6 +626,104 @@ model customerportalactivationtoken {
   @@index([deletedAt], map: "CustomerPortalActivationToken_deletedAt_idx")
   @@index([expiresAt], map: "CustomerPortalActivationToken_expiresAt_idx")
   @@index([usedAt], map: "CustomerPortalActivationToken_usedAt_idx")
+}
+
+model ledgergroup {
+  id              String                    @id
+  companyId       String
+  name            String
+  natureType      ledgergroup_natureType
+  normalBalance   ledgergroup_normalBalance
+  isDirect        Boolean                   @default(false)
+  isSystemManaged Boolean                   @default(true)
+  sortOrder       Int                       @default(0)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime
+  company         company                   @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "LedgerGroup_companyId_fkey")
+  ledgeraccount   ledgeraccount[]
+
+  @@unique([companyId, name], map: "LedgerGroup_companyId_name_key")
+  @@index([companyId], map: "LedgerGroup_companyId_idx")
+}
+
+model ledgeraccount {
+  id                 String                           @id
+  companyId          String
+  ledgerGroupId      String
+  name               String
+  linkedCustomerId   String?                          @unique(map: "LedgerAccount_linkedCustomerId_key")
+  linkedVendorId     String?                          @unique(map: "LedgerAccount_linkedVendorId_key")
+  openingBalance     Decimal                          @default(0.00) @db.Decimal(14, 2)
+  openingBalanceSide ledgeraccount_openingBalanceSide @default(DEBIT)
+  isSystemManaged    Boolean                          @default(false)
+  createdAt          DateTime                         @default(now())
+  updatedAt          DateTime
+  deletedAt          DateTime?
+  company            company                          @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "LedgerAccount_companyId_fkey")
+  ledgergroup        ledgergroup                      @relation(fields: [ledgerGroupId], references: [id], map: "LedgerAccount_ledgerGroupId_fkey")
+  customer           customer?                        @relation(fields: [linkedCustomerId], references: [id], onDelete: Cascade, map: "LedgerAccount_linkedCustomerId_fkey")
+  vendor             vendor?                          @relation(fields: [linkedVendorId], references: [id], onDelete: Cascade, map: "LedgerAccount_linkedVendorId_fkey")
+  journalentryline   journalentryline[]
+
+  @@unique([companyId, name], map: "LedgerAccount_companyId_name_key")
+  @@index([companyId], map: "LedgerAccount_companyId_idx")
+  @@index([ledgerGroupId], map: "LedgerAccount_ledgerGroupId_idx")
+  @@index([deletedAt], map: "LedgerAccount_deletedAt_idx")
+}
+
+model journalentry {
+  id                String                   @id
+  companyId         String
+  entryDate         DateTime
+  voucherType       journalentry_voucherType
+  narration         String?                  @db.Text
+  sourceType        String?
+  sourceId          String?
+  createdById       String
+  reversedByEntryId String?
+  locked            Boolean                  @default(false)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime
+  company           company                  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "JournalEntry_companyId_fkey")
+  user              user                     @relation(fields: [createdById], references: [id], map: "JournalEntry_createdById_fkey")
+  journalentryline  journalentryline[]
+
+  @@unique([companyId, sourceType, sourceId, voucherType], map: "JournalEntry_source_key")
+  @@index([companyId], map: "JournalEntry_companyId_idx")
+  @@index([entryDate], map: "JournalEntry_entryDate_idx")
+  @@index([sourceType, sourceId], map: "JournalEntry_sourceType_sourceId_idx")
+}
+
+model journalentryline {
+  id              String                          @id
+  journalEntryId  String
+  ledgerAccountId String
+  side            journalentryline_side
+  nativeAmount    Decimal                         @db.Decimal(14, 2)
+  nativeCurrency  journalentryline_nativeCurrency @default(BDT)
+  rateToUSD       Decimal                         @default(1.000000) @db.Decimal(14, 6)
+  rateToBDT       Decimal                         @default(1.0000) @db.Decimal(14, 4)
+  amountUSD       Decimal                         @db.Decimal(14, 2)
+  amountBDT       Decimal                         @db.Decimal(14, 2)
+  lineNarration   String?
+  createdAt       DateTime                        @default(now())
+  journalentry    journalentry                    @relation(fields: [journalEntryId], references: [id], onDelete: Cascade, map: "JournalEntryLine_journalEntryId_fkey")
+  ledgeraccount   ledgeraccount                   @relation(fields: [ledgerAccountId], references: [id], map: "JournalEntryLine_ledgerAccountId_fkey")
+
+  @@index([journalEntryId], map: "JournalEntryLine_journalEntryId_idx")
+  @@index([ledgerAccountId], map: "JournalEntryLine_ledgerAccountId_idx")
+}
+
+model exchangerate {
+  id            String                @id
+  currency      exchangerate_currency
+  rateToUSD     Decimal               @db.Decimal(14, 6)
+  effectiveDate DateTime
+  createdAt     DateTime              @default(now())
+
+  @@unique([currency, effectiveDate], map: "ExchangeRate_currency_effectiveDate_key")
+  @@index([currency], map: "ExchangeRate_currency_idx")
+  @@index([effectiveDate], map: "ExchangeRate_effectiveDate_idx")
 }
 
 model documentapproval {
@@ -684,17 +791,17 @@ model documentchecklistitem {
 }
 
 model documenttemplate {
-  id           String                         @id
-  companyId    String
-  documentType documenttemplate_documentType
-  name         String
-  isActive     Boolean                        @default(false)
-  createdById  String?
-  createdAt    DateTime                       @default(now())
-  updatedAt    DateTime
-  deletedAt    DateTime?
-  company      company                        @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "DocumentTemplate_companyId_fkey")
-  user         user?                          @relation(fields: [createdById], references: [id], map: "DocumentTemplate_createdById_fkey")
+  id                      String                        @id
+  companyId               String
+  documentType            documenttemplate_documentType
+  name                    String
+  isActive                Boolean                       @default(false)
+  createdById             String?
+  createdAt               DateTime                      @default(now())
+  updatedAt               DateTime
+  deletedAt               DateTime?
+  company                 company                       @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "DocumentTemplate_companyId_fkey")
+  user                    user?                         @relation(fields: [createdById], references: [id], map: "DocumentTemplate_createdById_fkey")
   documenttemplateversion documenttemplateversion[]
 
   @@index([companyId, documentType], map: "DocumentTemplate_companyId_documentType_idx")
@@ -702,15 +809,15 @@ model documenttemplate {
 }
 
 model documenttemplateversion {
-  id               String           @id
+  id               String            @id
   templateId       String
   versionNumber    Int
-  layoutJson       String           @db.Text
-  isCurrent        Boolean          @default(true)
+  layoutJson       String            @db.Text
+  isCurrent        Boolean           @default(true)
   createdById      String?
-  createdAt        DateTime         @default(now())
-  documenttemplate documenttemplate @relation(fields: [templateId], references: [id], onDelete: Cascade, map: "DocumentTemplateVersion_templateId_fkey")
-  user             user?            @relation(fields: [createdById], references: [id], map: "DocumentTemplateVersion_createdById_fkey")
+  createdAt        DateTime          @default(now())
+  documenttemplate documenttemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade, map: "DocumentTemplateVersion_templateId_fkey")
+  user             user?             @relation(fields: [createdById], references: [id], map: "DocumentTemplateVersion_createdById_fkey")
   invoice          invoice[]
   quotation        quotation[]
   freightdocument  freightdocument[]
@@ -814,7 +921,7 @@ model freightdocument {
   shipmentjob                             shipmentjob                    @relation(fields: [shipmentJobId], references: [id], onDelete: Cascade, map: "FreightDocument_shipmentJobId_fkey")
   user_freightdocument_uploadedByIdTouser user?                          @relation("freightdocument_uploadedByIdTouser", fields: [uploadedById], references: [id], map: "FreightDocument_uploadedById_fkey")
   user_freightdocument_verifiedByIdTouser user?                          @relation("freightdocument_verifiedByIdTouser", fields: [verifiedById], references: [id], map: "FreightDocument_verifiedById_fkey")
-  documenttemplateversion                 documenttemplateversion?      @relation(fields: [templateVersionId], references: [id], map: "FreightDocument_templateVersionId_fkey")
+  documenttemplateversion                 documenttemplateversion?       @relation(fields: [templateVersionId], references: [id], map: "FreightDocument_templateVersionId_fkey")
 
   @@unique([companyId, type, documentNo], map: "FreightDocument_companyId_type_documentNo_key")
   @@index([companyId], map: "FreightDocument_companyId_idx")
@@ -846,27 +953,27 @@ model freightdocumentsequence {
 }
 
 model importjob {
-  id              String                      @id
+  id              String                     @id
   companyId       String
   actorId         String
   entityType      importjob_entityType
-  status          importjob_status            @default(UPLOADED)
+  status          importjob_status           @default(UPLOADED)
   fileName        String
   filePath        String
   fileSize        Int
   rowCount        Int?
-  columnMapping   String?                     @db.Text
+  columnMapping   String?                    @db.Text
   duplicatePolicy importjob_duplicatePolicy?
-  createdCount    Int                         @default(0)
-  skippedCount    Int                         @default(0)
-  rejectedCount   Int                         @default(0)
-  rowErrors       String?                     @db.LongText
-  errorMessage    String?                     @db.Text
-  createdAt       DateTime                    @default(now())
+  createdCount    Int                        @default(0)
+  skippedCount    Int                        @default(0)
+  rejectedCount   Int                        @default(0)
+  rowErrors       String?                    @db.LongText
+  errorMessage    String?                    @db.Text
+  createdAt       DateTime                   @default(now())
   updatedAt       DateTime
   completedAt     DateTime?
-  company         company                     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ImportJob_companyId_fkey")
-  user            user                        @relation(fields: [actorId], references: [id], onDelete: Cascade, map: "ImportJob_actorId_fkey")
+  company         company                    @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ImportJob_companyId_fkey")
+  user            user                       @relation(fields: [actorId], references: [id], onDelete: Cascade, map: "ImportJob_actorId_fkey")
 
   @@index([companyId], map: "ImportJob_companyId_idx")
   @@index([status], map: "ImportJob_status_idx")
@@ -874,43 +981,43 @@ model importjob {
 }
 
 model invoice {
-  id                String           @id
-  companyId         String
-  branchId          String
-  invoiceNo         String
-  customerId        String
-  shipmentJobId     String?
-  quotationId       String?
-  status            invoice_status   @default(DRAFT)
-  invoiceDate       DateTime
-  dueDate           DateTime?
-  currency          invoice_currency @default(BDT)
-  exchangeRateToBDT Decimal          @default(1.0000) @db.Decimal(14, 4)
-  subtotal          Decimal          @default(0.00) @db.Decimal(14, 2)
-  discountAmount    Decimal          @default(0.00) @db.Decimal(14, 2)
-  taxAmount         Decimal          @default(0.00) @db.Decimal(14, 2)
-  totalAmount       Decimal          @default(0.00) @db.Decimal(14, 2)
-  paidAmount        Decimal          @default(0.00) @db.Decimal(14, 2)
-  dueAmount         Decimal          @default(0.00) @db.Decimal(14, 2)
-  remarks           String?          @db.Text
-  createdById       String
-  sentAt            DateTime?
-  cancelledAt       DateTime?
-  templateVersionId String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime
-  deletedAt         DateTime?
-  freightbooking    freightbooking[]
-  company           company          @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Invoice_companyId_fkey")
-  branch            branch           @relation(fields: [branchId], references: [id], map: "Invoice_branchId_fkey")
-  user              user             @relation(fields: [createdById], references: [id], map: "Invoice_createdById_fkey")
-  customer          customer         @relation(fields: [customerId], references: [id], map: "Invoice_customerId_fkey")
-  quotation         quotation?       @relation(fields: [quotationId], references: [id], map: "Invoice_quotationId_fkey")
-  shipmentjob       shipmentjob?     @relation(fields: [shipmentJobId], references: [id], map: "Invoice_shipmentJobId_fkey")
+  id                      String                   @id
+  companyId               String
+  branchId                String
+  invoiceNo               String
+  customerId              String
+  shipmentJobId           String?
+  quotationId             String?
+  status                  invoice_status           @default(DRAFT)
+  invoiceDate             DateTime
+  dueDate                 DateTime?
+  currency                invoice_currency         @default(BDT)
+  exchangeRateToBDT       Decimal                  @default(1.0000) @db.Decimal(14, 4)
+  subtotal                Decimal                  @default(0.00) @db.Decimal(14, 2)
+  discountAmount          Decimal                  @default(0.00) @db.Decimal(14, 2)
+  taxAmount               Decimal                  @default(0.00) @db.Decimal(14, 2)
+  totalAmount             Decimal                  @default(0.00) @db.Decimal(14, 2)
+  paidAmount              Decimal                  @default(0.00) @db.Decimal(14, 2)
+  dueAmount               Decimal                  @default(0.00) @db.Decimal(14, 2)
+  remarks                 String?                  @db.Text
+  createdById             String
+  sentAt                  DateTime?
+  cancelledAt             DateTime?
+  templateVersionId       String?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime
+  deletedAt               DateTime?
+  freightbooking          freightbooking[]
+  company                 company                  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Invoice_companyId_fkey")
+  branch                  branch                   @relation(fields: [branchId], references: [id], map: "Invoice_branchId_fkey")
+  user                    user                     @relation(fields: [createdById], references: [id], map: "Invoice_createdById_fkey")
+  customer                customer                 @relation(fields: [customerId], references: [id], map: "Invoice_customerId_fkey")
+  quotation               quotation?               @relation(fields: [quotationId], references: [id], map: "Invoice_quotationId_fkey")
+  shipmentjob             shipmentjob?             @relation(fields: [shipmentJobId], references: [id], map: "Invoice_shipmentJobId_fkey")
   documenttemplateversion documenttemplateversion? @relation(fields: [templateVersionId], references: [id], map: "Invoice_templateVersionId_fkey")
-  invoiceline       invoiceline[]
-  payment           payment[]
-  task              task[]
+  invoiceline             invoiceline[]
+  payment                 payment[]
+  task                    task[]
 
   @@unique([companyId, invoiceNo], map: "Invoice_companyId_invoiceNo_key")
   @@index([companyId], map: "Invoice_companyId_idx")
@@ -1075,12 +1182,12 @@ model notificationtemplate {
 }
 
 model notificationoptout {
-  id           String                        @id
+  id           String                       @id
   companyId    String
   recipientKey String
   channel      notificationdelivery_channel
-  createdAt    DateTime                      @default(now())
-  company      company                       @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "NotificationOptOut_companyId_fkey")
+  createdAt    DateTime                     @default(now())
+  company      company                      @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "NotificationOptOut_companyId_fkey")
 
   @@unique([companyId, recipientKey, channel], map: "NotificationOptOut_companyId_recipientKey_channel_key")
   @@index([companyId], map: "NotificationOptOut_companyId_idx")
@@ -1990,37 +2097,37 @@ model taskcomment {
 }
 
 model taskrecurrence {
-  id                String                    @id
-  companyId         String
-  branchId          String
-  createdById       String
-  title             String
-  description       String?                   @db.Text
-  priority          task_priority             @default(MEDIUM)
-  assignedUserId    String?
-  customerId        String?
-  vendorId          String?
-  shipmentJobId     String?
-  quotationId       String?
-  invoiceId         String?
-  shipmentRequestId String?
-  frequency         taskrecurrence_frequency
-  interval          Int                       @default(1)
-  timezone          String
-  startDate         DateTime
-  endDate           DateTime?
-  dueInDays         Int                       @default(0)
-  isActive          Boolean                   @default(true)
-  nextRunAt         DateTime
-  lastRunAt         DateTime?
-  createdAt         DateTime                  @default(now())
-  updatedAt         DateTime
-  deletedAt         DateTime?
-  company                                   company @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "TaskRecurrence_companyId_fkey")
-  branch                                    branch  @relation(fields: [branchId], references: [id], map: "TaskRecurrence_branchId_fkey")
-  user_taskrecurrence_createdByIdTouser     user    @relation("taskrecurrence_createdByIdTouser", fields: [createdById], references: [id], map: "TaskRecurrence_createdById_fkey")
-  user_taskrecurrence_assignedUserIdTouser  user?   @relation("taskrecurrence_assignedUserIdTouser", fields: [assignedUserId], references: [id], map: "TaskRecurrence_assignedUserId_fkey")
-  task                                      task[]
+  id                                       String                   @id
+  companyId                                String
+  branchId                                 String
+  createdById                              String
+  title                                    String
+  description                              String?                  @db.Text
+  priority                                 task_priority            @default(MEDIUM)
+  assignedUserId                           String?
+  customerId                               String?
+  vendorId                                 String?
+  shipmentJobId                            String?
+  quotationId                              String?
+  invoiceId                                String?
+  shipmentRequestId                        String?
+  frequency                                taskrecurrence_frequency
+  interval                                 Int                      @default(1)
+  timezone                                 String
+  startDate                                DateTime
+  endDate                                  DateTime?
+  dueInDays                                Int                      @default(0)
+  isActive                                 Boolean                  @default(true)
+  nextRunAt                                DateTime
+  lastRunAt                                DateTime?
+  createdAt                                DateTime                 @default(now())
+  updatedAt                                DateTime
+  deletedAt                                DateTime?
+  company                                  company                  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "TaskRecurrence_companyId_fkey")
+  branch                                   branch                   @relation(fields: [branchId], references: [id], map: "TaskRecurrence_branchId_fkey")
+  user_taskrecurrence_createdByIdTouser    user                     @relation("taskrecurrence_createdByIdTouser", fields: [createdById], references: [id], map: "TaskRecurrence_createdById_fkey")
+  user_taskrecurrence_assignedUserIdTouser user?                    @relation("taskrecurrence_assignedUserIdTouser", fields: [assignedUserId], references: [id], map: "TaskRecurrence_assignedUserId_fkey")
+  task                                     task[]
 
   @@index([companyId], map: "TaskRecurrence_companyId_idx")
   @@index([branchId], map: "TaskRecurrence_branchId_idx")
@@ -2047,16 +2154,16 @@ model user {
   scope                                                          user_scope                @default(COMPANY)
   customerId                                                     String?
   account                                                        account[]
-  approvaldecision                                                approvaldecision[]
-  approvalpolicy                                                  approvalpolicy[]
-  approvalrequest                                                 approvalrequest[]
-  approvalstep                                                    approvalstep[]
+  approvaldecision                                               approvaldecision[]
+  approvalpolicy                                                 approvalpolicy[]
+  approvalrequest                                                approvalrequest[]
+  approvalstep                                                   approvalstep[]
   auditlog                                                       auditlog[]
   clientportalaccount                                            clientportalaccount[]
   communicationaccount                                           communicationaccount[]
   documentapproval                                               documentapproval[]
-  documenttemplate                                                documenttemplate[]
-  documenttemplateversion                                         documenttemplateversion[]
+  documenttemplate                                               documenttemplate[]
+  documenttemplateversion                                        documenttemplateversion[]
   documentversion                                                documentversion[]
   freightbooking                                                 freightbooking[]
   freightdocument_freightdocument_lockedByIdTouser               freightdocument[]         @relation("freightdocument_lockedByIdTouser")
@@ -2065,6 +2172,7 @@ model user {
   freightdocument_freightdocument_verifiedByIdTouser             freightdocument[]         @relation("freightdocument_verifiedByIdTouser")
   importjob                                                      importjob[]
   invoice                                                        invoice[]
+  journalentry                                                   journalentry[]
   notification                                                   notification[]
   notificationdelivery                                           notificationdelivery[]
   passwordresettoken                                             passwordresettoken[]
@@ -2091,11 +2199,12 @@ model user {
   task_task_createdByIdTouser                                    task[]                    @relation("task_createdByIdTouser")
   taskcomment                                                    taskcomment[]
   taskrecurrence_taskrecurrence_createdByIdTouser                taskrecurrence[]          @relation("taskrecurrence_createdByIdTouser")
-  taskrecurrence_taskrecurrence_assignedUserIdTouser              taskrecurrence[]          @relation("taskrecurrence_assignedUserIdTouser")
+  taskrecurrence_taskrecurrence_assignedUserIdTouser             taskrecurrence[]          @relation("taskrecurrence_assignedUserIdTouser")
   company                                                        company?                  @relation(fields: [companyId], references: [id], map: "User_companyId_fkey")
   customer                                                       customer?                 @relation(fields: [customerId], references: [id], map: "User_customerId_fkey")
   userrole                                                       userrole[]
   userbranchmembership                                           userbranchmembership[]
+  usercompanyaccess                                              usercompanyaccess[]
   userdashboardlayout                                            userdashboardlayout[]
   vendorbill                                                     vendorbill[]
   workflowoverride                                               workflowoverride[]
@@ -2158,6 +2267,21 @@ model userbranchmembership {
   @@index([userId, isDefault], map: "UserBranchMembership_userId_isDefault_idx")
 }
 
+model usercompanyaccess {
+  id        String   @id
+  userId    String
+  companyId String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  company   company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "UserCompanyAccess_companyId_fkey")
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserCompanyAccess_userId_fkey")
+
+  @@unique([userId, companyId], map: "UserCompanyAccess_userId_companyId_key")
+  @@index([companyId], map: "UserCompanyAccess_companyId_idx")
+  @@index([userId], map: "UserCompanyAccess_userId_idx")
+}
+
 model userrole {
   id        String   @id
   userId    String
@@ -2203,6 +2327,7 @@ model vendor {
   carrierproposal      carrierproposal[]
   carrierquery         carrierquery[]
   freightbooking       freightbooking[]
+  ledgeraccount        ledgeraccount?
   payment              payment[]
   prealert             prealert[]
   quotationcharge      quotationcharge[]
@@ -3372,4 +3497,72 @@ enum taskrecurrence_frequency {
   DAILY
   WEEKLY
   MONTHLY
+}
+
+enum ledgergroup_natureType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+enum ledgergroup_normalBalance {
+  DEBIT
+  CREDIT
+}
+
+enum ledgeraccount_openingBalanceSide {
+  DEBIT
+  CREDIT
+}
+
+enum journalentry_voucherType {
+  SALES
+  PURCHASE
+  RECEIPT
+  PAYMENT
+  CONTRA
+  JOURNAL
+}
+
+enum journalentryline_side {
+  DEBIT
+  CREDIT
+}
+
+enum journalentryline_nativeCurrency {
+  BDT
+  USD
+  EUR
+  GBP
+  CNY
+  INR
+  AED
+  RUB
+  OTHER
+}
+
+enum company_baseCurrency {
+  BDT
+  USD
+  EUR
+  GBP
+  CNY
+  INR
+  AED
+  RUB
+  OTHER
+}
+
+enum exchangerate_currency {
+  BDT
+  USD
+  EUR
+  GBP
+  CNY
+  INR
+  AED
+  RUB
+  OTHER
 }

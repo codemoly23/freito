@@ -35,6 +35,14 @@ import {
   successState,
   validationError,
 } from "@/lib/actions/helpers";
+import {
+  postInvoiceSentEntry,
+  reverseInvoiceEntry,
+  postVendorBillReceivedEntry,
+  reverseVendorBillEntry,
+  postPaymentEntry,
+  reversePaymentEntry,
+} from "@/lib/accounting/billing-hooks";
 
 type SequenceKind = "invoice" | "vendorBill" | "payment";
 
@@ -368,6 +376,9 @@ export async function saveInvoice(
           updatedAt: new Date(),
         })),
       });
+      if (existing && existing.status !== "DRAFT" && existing.status !== "CANCELLED") {
+        await postInvoiceSentEntry(tx, invoice, user.id);
+      }
       return invoice;
     });
 
@@ -424,15 +435,21 @@ export async function updateInvoiceStatus(formData: FormData) {
   });
   if (!invoice || invoice.status === "PAID") return;
   if (!["SENT", "CANCELLED"].includes(target)) return;
-  const updated = await prisma.$transaction((tx) =>
-    tx.invoice.update({
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await tx.invoice.update({
       where: { id: invoice.id },
       data:
         target === "SENT"
           ? { status: "SENT", sentAt: new Date() }
           : { status: "CANCELLED", cancelledAt: new Date() },
-    }),
-  );
+    });
+    if (target === "SENT") {
+      await postInvoiceSentEntry(tx, result, user.id);
+    } else {
+      await reverseInvoiceEntry(tx, { companyId, invoiceId: result.id }, user.id);
+    }
+    return result;
+  });
   await audit({
     companyId,
     actorId: user.id,
@@ -490,9 +507,10 @@ export async function deleteInvoice(formData: FormData) {
   });
   if (!invoice || invoice.paidAmount.greaterThan(0)) return;
   if (await lockedFinanceShipmentId(invoice.shipmentJobId, companyId)) return;
-  await prisma.$transaction((tx) =>
-    tx.invoice.update({ where: { id: invoice.id }, data: { deletedAt: new Date() } }),
-  );
+  await prisma.$transaction(async (tx) => {
+    await tx.invoice.update({ where: { id: invoice.id }, data: { deletedAt: new Date() } });
+    await reverseInvoiceEntry(tx, { companyId, invoiceId: invoice.id }, user.id);
+  });
   await audit({ companyId, actorId: user.id, action: "INVOICE_DELETED", entityType: "Invoice", entityId: invoice.id, metadata: { invoiceNo: invoice.invoiceNo, shipmentJobId: invoice.shipmentJobId } });
   if (invoice.shipmentJobId) {
     await recalculateShipmentWorkflow(invoice.shipmentJobId);
@@ -607,6 +625,9 @@ export async function saveVendorBill(
           updatedAt: new Date(),
         })),
       });
+      if (existing && existing.status !== "DRAFT" && existing.status !== "CANCELLED") {
+        await postVendorBillReceivedEntry(tx, bill, user.id);
+      }
       return bill;
     });
   let bill;
@@ -692,12 +713,18 @@ export async function updateVendorBillStatus(formData: FormData) {
     }
   }
 
-  const updated = await prisma.$transaction((tx) =>
-    tx.vendorbill.update({
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await tx.vendorbill.update({
       where: { id: bill.id },
       data: target === "RECEIVED" ? { status: "RECEIVED", receivedAt: new Date() } : { status: "CANCELLED", cancelledAt: new Date() },
-    }),
-  );
+    });
+    if (target === "RECEIVED") {
+      await postVendorBillReceivedEntry(tx, result, user.id);
+    } else {
+      await reverseVendorBillEntry(tx, { companyId, vendorBillId: result.id }, user.id);
+    }
+    return result;
+  });
   await audit({ companyId, actorId: user.id, action: target === "RECEIVED" ? "VENDOR_BILL_RECEIVED" : "VENDOR_BILL_CANCELLED", entityType: "VendorBill", entityId: bill.id, metadata: { billNo: bill.billNo, from: bill.status, to: updated.status, shipmentJobId: bill.shipmentJobId } });
   await audit({ companyId, actorId: user.id, action: "VENDOR_BILL_STATUS_CHANGED", entityType: "VendorBill", entityId: bill.id, metadata: { billNo: bill.billNo, from: bill.status, to: updated.status } });
   if (target === "RECEIVED") {
@@ -725,9 +752,10 @@ export async function deleteVendorBill(formData: FormData) {
   const bill = await prisma.vendorbill.findFirst({ where: { id: getString(formData, "id"), companyId, deletedAt: null, ...branchScopeWhere(accessibleBranchIds) } });
   if (!bill || bill.paidAmount.greaterThan(0)) return;
   if (await lockedFinanceShipmentId(bill.shipmentJobId, companyId)) return;
-  await prisma.$transaction((tx) =>
-    tx.vendorbill.update({ where: { id: bill.id }, data: { deletedAt: new Date() } }),
-  );
+  await prisma.$transaction(async (tx) => {
+    await tx.vendorbill.update({ where: { id: bill.id }, data: { deletedAt: new Date() } });
+    await reverseVendorBillEntry(tx, { companyId, vendorBillId: bill.id }, user.id);
+  });
   await audit({ companyId, actorId: user.id, action: "VENDOR_BILL_DELETED", entityType: "VendorBill", entityId: bill.id, metadata: { billNo: bill.billNo, shipmentJobId: bill.shipmentJobId } });
   if (bill.shipmentJobId) {
     await recalculateShipmentWorkflow(bill.shipmentJobId);
@@ -774,6 +802,28 @@ async function applyPaymentFinancialEffectTx(
       where: { id: currentInvoice.id },
       data: { paidAmount, dueAmount, status },
     });
+    // A payment can be recorded against an invoice that was never explicitly
+    // "Sent" (DRAFT -> PARTIALLY_PAID/PAID is a valid direct transition), so
+    // the revenue-recognition entry may not exist yet. postInvoiceSentEntry
+    // is idempotent (synced on sourceType/sourceId/voucherType), so calling
+    // it here is safe whether or not it already posted.
+    const fullInvoice = await tx.invoice.findUnique({
+      where: { id: currentInvoice.id },
+      select: {
+        id: true,
+        companyId: true,
+        customerId: true,
+        shipmentJobId: true,
+        currency: true,
+        exchangeRateToBDT: true,
+        totalAmount: true,
+        invoiceNo: true,
+        invoiceDate: true,
+      },
+    });
+    if (fullInvoice) {
+      await postInvoiceSentEntry(tx, fullInvoice, actorId);
+    }
     if (status !== currentInvoice.status) {
       await tx.auditlog.create({
         data: {
@@ -806,6 +856,26 @@ async function applyPaymentFinancialEffectTx(
       where: { id: currentBill.id },
       data: { paidAmount, dueAmount, status },
     });
+    // Mirrors the invoice case above: a payment can be recorded against a
+    // bill that never went through the explicit "Received" transition.
+    // postVendorBillReceivedEntry is idempotent, so this is safe either way.
+    const fullBill = await tx.vendorbill.findUnique({
+      where: { id: currentBill.id },
+      select: {
+        id: true,
+        companyId: true,
+        vendorId: true,
+        shipmentJobId: true,
+        currency: true,
+        exchangeRateToBDT: true,
+        totalAmount: true,
+        billNo: true,
+        billDate: true,
+      },
+    });
+    if (fullBill) {
+      await postVendorBillReceivedEntry(tx, fullBill, actorId);
+    }
     if (status !== currentBill.status) {
       await tx.auditlog.create({
         data: {
@@ -824,6 +894,11 @@ async function applyPaymentFinancialEffectTx(
         },
       });
     }
+  }
+
+  const paymentRecord = await tx.payment.findUnique({ where: { id: paymentId } });
+  if (paymentRecord) {
+    await postPaymentEntry(tx, paymentRecord, actorId);
   }
 }
 
@@ -1110,6 +1185,7 @@ export async function deletePayment(formData: FormData) {
   if (!payment || payment.status !== "CLEARED") return;
   await prisma.$transaction(async (tx) => {
     await tx.payment.update({ where: { id: payment.id }, data: { deletedAt: new Date(), status: "CANCELLED" } });
+    await reversePaymentEntry(tx, { companyId, paymentId: payment.id, direction: payment.direction }, user.id);
     if (payment.invoice) {
       const paidAmount = payment.invoice.paidAmount.sub(payment.amount).toDecimalPlaces(2);
       const status = invoicePaymentStatus(
@@ -1200,9 +1276,11 @@ export async function deletePayment(formData: FormData) {
 export async function applyApprovedVendorBillReceipt(vendorBillId: string, companyId: string, actorId: string) {
   const bill = await prisma.vendorbill.findFirst({ where: { id: vendorBillId, companyId, deletedAt: null } });
   if (!bill || bill.status !== "DRAFT") return;
-  const updated = await prisma.$transaction((tx) =>
-    tx.vendorbill.update({ where: { id: bill.id }, data: { status: "RECEIVED", receivedAt: new Date() } }),
-  );
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await tx.vendorbill.update({ where: { id: bill.id }, data: { status: "RECEIVED", receivedAt: new Date() } });
+    await postVendorBillReceivedEntry(tx, result, actorId);
+    return result;
+  });
   await audit({
     companyId,
     actorId,

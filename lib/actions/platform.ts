@@ -15,6 +15,7 @@ import {
   validationError,
 } from "@/lib/actions/helpers";
 import { requirePlatformPermission } from "@/lib/permissions/rbac";
+import { seedDefaultChartOfAccounts } from "@/lib/accounting/seed-chart-of-accounts";
 
 const moduleKeys = [
   "SHIPMENTS",
@@ -35,6 +36,8 @@ const platformCompanySchema = z.object({
   email: z.string().trim().optional().transform((value) => value || null).pipe(z.string().email("Enter a valid email.").nullable()),
   phone: z.string().trim().optional().transform((value) => value || null),
   address: z.string().trim().optional().transform((value) => value || null),
+  country: z.string().trim().optional().transform((value) => value || null),
+  baseCurrency: z.enum(["BDT", "USD", "EUR", "GBP", "CNY", "INR", "AED", "RUB", "OTHER"]),
   status: z.enum(["ACTIVE", "SUSPENDED"]),
   planType: z.enum(["TRIAL", "MONTHLY", "YEARLY", "LIFETIME_CLOUD", "SELF_HOSTED"]),
   deploymentType: z.enum(["CLOUD", "SELF_HOSTED"]),
@@ -81,6 +84,8 @@ export async function savePlatformCompany(
     email: getString(formData, "email"),
     phone: getString(formData, "phone"),
     address: getString(formData, "address"),
+    country: getString(formData, "country"),
+    baseCurrency: getString(formData, "baseCurrency") || "BDT",
     status: getString(formData, "status") || "ACTIVE",
     planType: getString(formData, "planType") || "TRIAL",
     deploymentType: getString(formData, "deploymentType") || "CLOUD",
@@ -179,6 +184,14 @@ export async function savePlatformCompany(
     throw error;
   }
 
+  if (!parsedId) {
+    try {
+      await seedDefaultChartOfAccounts(company.id);
+    } catch (chartOfAccountsError) {
+      console.error("Failed to seed chart of accounts", chartOfAccountsError);
+    }
+  }
+
   await audit({
     companyId: company.id,
     actorId: user.id,
@@ -205,6 +218,89 @@ export async function savePlatformCompany(
 
   revalidatePlatformPaths();
   return successState(parsedId ? "Company updated." : "Company created.");
+}
+
+export async function initializeCompanyAccounting(formData: FormData) {
+  const user = await requirePlatformPermission("platform:companies:update");
+  const companyId = getString(formData, "id");
+  if (!companyId) return;
+
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  if (!company) return;
+
+  await seedDefaultChartOfAccounts(companyId);
+
+  await audit({
+    companyId,
+    actorId: user.id,
+    action: "PLATFORM_COMPANY_ACCOUNTING_INITIALIZED",
+    entityType: "Company",
+    entityId: companyId,
+    metadata: { name: company.name },
+  });
+
+  revalidatePlatformPaths();
+}
+
+/**
+ * Grants a user (from any company) view-only, audit-mode access to switch
+ * into `companyId` -- the row `getAuditScopedCompanyId` re-validates on every
+ * report read. Granting is platform-only: the target company never controls
+ * who can audit it, and the grantee's own company never controls who can
+ * audit *other* companies. A no-op if the user already belongs to that
+ * company (their home company never needs a separate grant) or the grant
+ * already exists.
+ */
+export async function grantCompanySwitchAccess(formData: FormData) {
+  const user = await requirePlatformPermission("platform:companies:update");
+  const companyId = getString(formData, "companyId");
+  const userId = getString(formData, "userId");
+  if (!companyId || !userId) return;
+
+  const [company, targetUser] = await Promise.all([
+    prisma.company.findFirst({ where: { id: companyId, deletedAt: null } }),
+    prisma.user.findFirst({ where: { id: userId, deletedAt: null } }),
+  ]);
+  if (!company || !targetUser || targetUser.companyId === companyId) return;
+
+  await prisma.usercompanyaccess.upsert({
+    where: { userId_companyId: { userId, companyId } },
+    update: {},
+    create: { id: randomUUID(), userId, companyId, updatedAt: new Date() },
+  });
+
+  await audit({
+    companyId,
+    actorId: user.id,
+    action: "PLATFORM_COMPANY_SWITCH_ACCESS_GRANTED",
+    entityType: "Company",
+    entityId: companyId,
+    metadata: { grantedToUserId: userId, grantedToEmail: targetUser.email },
+  });
+
+  revalidatePath(`/platform/companies/${companyId}`);
+}
+
+export async function revokeCompanySwitchAccess(formData: FormData) {
+  const user = await requirePlatformPermission("platform:companies:update");
+  const id = getString(formData, "id");
+  if (!id) return;
+
+  const grant = await prisma.usercompanyaccess.findUnique({ where: { id } });
+  if (!grant) return;
+
+  await prisma.usercompanyaccess.delete({ where: { id } });
+
+  await audit({
+    companyId: grant.companyId,
+    actorId: user.id,
+    action: "PLATFORM_COMPANY_SWITCH_ACCESS_REVOKED",
+    entityType: "Company",
+    entityId: grant.companyId,
+    metadata: { revokedFromUserId: grant.userId },
+  });
+
+  revalidatePath(`/platform/companies/${grant.companyId}`);
 }
 
 export async function suspendPlatformCompany(formData: FormData) {

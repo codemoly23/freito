@@ -86,11 +86,13 @@ async function prepareFinanceData(shipmentId: string) {
       customerId: string;
       accountId: string;
       userId: string;
+      branchId: string;
     }[]>(
-      `SELECT c.id AS companyId, cpa.customerId AS customerId, cpa.id AS accountId, u.id AS userId
+      `SELECT c.id AS companyId, cpa.customerId AS customerId, cpa.id AS accountId, u.id AS userId, b.id AS branchId
        FROM Company c
        JOIN ClientPortalAccount cpa ON cpa.companyId = c.id
        JOIN User u ON u.companyId = c.id
+       JOIN Branch b ON b.companyId = c.id AND b.isActive = 1
        WHERE c.portalSlug = ? AND cpa.deletedAt IS NULL AND cpa.displayClientCode = ? AND u.email = ?
        LIMIT 1`,
       ["demo-freight", "DFC-CL-2026-0001", "admin@freightcontrol.com"],
@@ -117,15 +119,16 @@ async function prepareFinanceData(shipmentId: string) {
     );
     await connection.query(
       `INSERT INTO Invoice (
-        id, companyId, invoiceNo, customerId, shipmentJobId, status,
+        id, companyId, branchId, invoiceNo, customerId, shipmentJobId, status,
         invoiceDate, currency, exchangeRateToBDT, subtotal, discountAmount,
         taxAmount, totalAmount, paidAmount, dueAmount, remarks, createdById,
         createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, 'SENT', ?, 'BDT', 1, 1500, 0, 0, 1500, 0, 1500,
+      ) VALUES (?, ?, ?, ?, ?, ?, 'SENT', ?, 'BDT', 1, 1500, 0, 0, 1500, 0, 1500,
         'Phase 15 finance closeout invoice', ?, ?, ?)`,
       [
         invoiceId,
         scope.companyId,
+        scope.branchId,
         invoiceNo,
         scope.customerId,
         shipmentId,
@@ -144,17 +147,18 @@ async function prepareFinanceData(shipmentId: string) {
     );
     await connection.query(
       `INSERT INTO ShipmentRequest (
-        id, companyId, customerId, clientPortalAccountId, requestNo, status,
+        id, companyId, branchId, customerId, clientPortalAccountId, requestNo, status,
         shipmentType, transportMode, serviceScope, loadType, originCountry,
         originPort, destinationCountry, destinationPort, cargoDescription,
         customerReference, convertedShipmentJobId, source, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, 'CONVERTED', 'IMPORT', 'SEA', 'PORT_TO_PORT',
+      ) VALUES (?, ?, ?, ?, ?, ?, 'CONVERTED', 'IMPORT', 'SEA', 'PORT_TO_PORT',
         'FCL', 'China', 'Shanghai', 'Bangladesh', 'Chattogram',
         'Phase 15 portal safety cargo', 'Phase 15 portal safety',
         ?, 'CLIENT_PORTAL', ?, ?)`,
       [
         requestId,
         scope.companyId,
+        scope.branchId,
         scope.customerId,
         scope.accountId,
         requestNo,

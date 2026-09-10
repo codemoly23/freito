@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db/prisma";
 import { vendorSchema } from "@/lib/validators/admin";
+import { ensureVendorLedgerAccount } from "@/lib/accounting/seed-chart-of-accounts";
 import {
   type ActionState,
   audit,
@@ -115,6 +116,14 @@ export async function saveVendor(
           updatedAt: now,
         },
       });
+    }
+  }
+
+  if (!id) {
+    try {
+      await ensureVendorLedgerAccount(targetCompanyId, vendor.id, vendor.name);
+    } catch (ledgerError) {
+      console.error("Failed to create vendor ledger account", ledgerError);
     }
   }
 

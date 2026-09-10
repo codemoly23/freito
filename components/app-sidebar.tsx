@@ -7,6 +7,7 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import {
   BarChart3,
+  BookOpen,
   Building2,
   Cable,
   ChevronLeft,
@@ -86,6 +87,14 @@ const navigationGroups: NavigationGroup[] = [
       { name: "Approvals", href: "/dashboard/approvals", icon: CheckSquare, permission: ["vendorBills:approve", "payments:approve"], moduleKey: "BILLING" },
       { name: "Receivables", href: "/dashboard/receivables", icon: Landmark, permission: "receivables:view", moduleKey: "BILLING" },
       { name: "Payables", href: "/dashboard/payables", icon: Landmark, permission: "payables:view", moduleKey: "BILLING" },
+    ],
+  },
+  {
+    label: "Accounting",
+    items: [
+      { name: "Ledger Accounts", href: "/dashboard/accounting/ledgers", icon: BookOpen, permission: "ledgers:view", moduleKey: "BILLING" },
+      { name: "Opening Balances", href: "/dashboard/accounting/opening-balances", icon: BookOpen, permission: "accounts:manage", moduleKey: "BILLING" },
+      { name: "Journal Vouchers", href: "/dashboard/accounting/journal-vouchers", icon: BookOpen, permission: "accounts:manage", moduleKey: "BILLING" },
     ],
   },
   {
@@ -193,7 +202,7 @@ export function AppSidebar({
         {!isCollapsed ? (
           <div className="relative h-7 w-28 dark:filter dark:brightness-0 dark:invert">
             <Image
-              src="/images/freito-logo.png"
+              src="/images/freito-logo.svg"
               alt="FreightFast"
               fill
               priority

@@ -1,33 +1,51 @@
 import { notFound } from "next/navigation";
+import { grantCompanySwitchAccess, revokeCompanySwitchAccess } from "@/lib/actions/platform";
 import { prisma } from "@/lib/db/prisma";
-import { requirePlatformPermission } from "@/lib/permissions/rbac";
+import { hasPermission, requirePlatformPermission } from "@/lib/permissions/rbac";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function PlatformCompanyDetailPage({ params }: PageProps) {
-  await requirePlatformPermission("platform:companies:view");
+  const currentUser = await requirePlatformPermission("platform:companies:view");
   const { id } = await params;
 
-  const company = await prisma.company.findFirst({
-    where: { id, deletedAt: null },
-    include: {
-      companysubscription: true,
-      companymoduleaccess: { orderBy: { moduleKey: "asc" } },
-      _count: {
-        select: {
-          user: true,
-          customer: true,
-          vendor: true,
-          shipmentjob: true,
-          quotation: true,
+  const [company, switchGrants, candidateUsers] = await Promise.all([
+    prisma.company.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        companysubscription: true,
+        companymoduleaccess: { orderBy: { moduleKey: "asc" } },
+        _count: {
+          select: {
+            user: true,
+            customer: true,
+            vendor: true,
+            shipmentjob: true,
+            quotation: true,
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.usercompanyaccess.findMany({
+      where: { companyId: id },
+      include: { user: { select: { id: true, name: true, email: true, company: { select: { name: true } } } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.user.findMany({
+      where: { scope: "COMPANY", deletedAt: null, companyId: { not: id } },
+      select: { id: true, name: true, email: true, company: { select: { name: true } } },
+      orderBy: [{ company: { name: "asc" } }, { name: "asc" }],
+      take: 200,
+    }),
+  ]);
 
   if (!company) notFound();
+
+  const canManageAccess = hasPermission(currentUser, "platform:companies:update");
+  const grantedUserIds = new Set(switchGrants.map((g) => g.userId));
 
   return (
     <main className="space-y-6 p-4 lg:p-6">
@@ -85,6 +103,60 @@ export default async function PlatformCompanyDetailPage({ params }: PageProps) {
             ))}
             {!company.companymoduleaccess.length ? (
               <p className="text-sm text-slate-500">No module access rows seeded yet.</p>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Cross-company audit access</CardTitle>
+            <CardDescription>
+              Users granted view-only access to switch into this company&apos;s reports. They can never edit this
+              company&apos;s data -- every read is re-validated against this grant on every request.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              {switchGrants.map((grant) => (
+                <div key={grant.id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-medium text-slate-950">{grant.user.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {grant.user.email} &middot; home company: {grant.user.company?.name ?? "-"}
+                    </p>
+                  </div>
+                  {canManageAccess ? (
+                    <form action={revokeCompanySwitchAccess}>
+                      <input type="hidden" name="id" value={grant.id} />
+                      <Button type="submit" size="sm" variant="destructive">
+                        Revoke
+                      </Button>
+                    </form>
+                  ) : null}
+                </div>
+              ))}
+              {!switchGrants.length ? (
+                <p className="text-sm text-slate-500">No users currently have audit access to this company.</p>
+              ) : null}
+            </div>
+            {canManageAccess ? (
+              <form action={grantCompanySwitchAccess} className="flex flex-wrap items-end gap-2 border-t border-slate-200 pt-4">
+                <input type="hidden" name="companyId" value={company.id} />
+                <label className="flex-1 text-sm">
+                  <span className="mb-1 block text-slate-600">Grant access to</span>
+                  <select name="userId" required className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+                    <option value="">Select user</option>
+                    {candidateUsers
+                      .filter((u) => !grantedUserIds.has(u.id))
+                      .map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} ({u.company?.name ?? "-"}) &mdash; {u.email}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <Button type="submit" size="sm">Grant access</Button>
+              </form>
             ) : null}
           </CardContent>
         </Card>

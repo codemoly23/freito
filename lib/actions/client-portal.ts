@@ -399,8 +399,8 @@ export async function changeClientPortalPassword(
   const confirmPassword = getString(formData, "confirmPassword");
 
   if (!currentPassword) return validationError("Current password is required.");
-  if (!newPassword || newPassword.length < 6) {
-    return validationError("New password must be at least 6 characters long.");
+  if (!newPassword || newPassword.length < 8) {
+    return validationError("New password must be at least 8 characters long.");
   }
   if (newPassword !== confirmPassword) {
     return validationError("New password and confirmation password do not match.");

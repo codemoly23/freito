@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { customerSchema } from "@/lib/validators/admin";
+import { ensureCustomerLedgerAccount } from "@/lib/accounting/seed-chart-of-accounts";
 import {
   type ActionState,
   audit,
@@ -123,6 +124,14 @@ export async function saveCustomer(
             updatedAt: new Date(),
           },
         });
+      }
+    }
+
+    if (!id) {
+      try {
+        await ensureCustomerLedgerAccount(targetCompanyId, customer.id, customer.name);
+      } catch (ledgerError) {
+        console.error("Failed to create customer ledger account", ledgerError);
       }
     }
 

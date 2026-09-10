@@ -19,6 +19,8 @@ type PlatformCompany = {
   email: string | null;
   phone: string | null;
   address: string | null;
+  country: string | null;
+  baseCurrency: string;
   status: string;
   planType: string;
   deploymentType: string;
@@ -38,6 +40,7 @@ const initialState: ActionState = {};
 const planTypes = ["TRIAL", "MONTHLY", "YEARLY", "LIFETIME_CLOUD", "SELF_HOSTED"];
 const deploymentTypes = ["CLOUD", "SELF_HOSTED"];
 const subscriptionStatuses = ["TRIAL", "ACTIVE", "PAST_DUE", "SUSPENDED", "EXPIRED", "CANCELLED"];
+const currencyOptions = ["BDT", "USD", "EUR", "GBP", "CNY", "INR", "AED", "RUB", "OTHER"];
 const moduleKeys = [
   "SHIPMENTS",
   "DOCUMENTS",
@@ -111,6 +114,17 @@ export function PlatformCompanyForm({
         <Field name="phone" label="Phone" value={editing?.phone} errors={state.errors?.phone} />
       </div>
       <Field name="address" label="Address" value={editing?.address} errors={state.errors?.address} />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field name="country" label="Country" value={editing?.country} errors={state.errors?.country} />
+        <Select
+          name="baseCurrency"
+          label="Base currency"
+          value={editing?.baseCurrency ?? "BDT"}
+          options={currencyOptions}
+          errors={state.errors?.baseCurrency}
+        />
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Select name="status" label="Company status" value={editing?.status ?? "ACTIVE"} options={["ACTIVE", "SUSPENDED"]} errors={state.errors?.status} />
@@ -189,6 +203,23 @@ function Field({
       <Input id={name} name={name} type={type} defaultValue={value ?? ""} />
       <FieldError errors={errors} />
     </div>
+  );
+}
+
+export function ExchangeRateForm({ action }: { action: FormAction }) {
+  const [state, formAction] = useActionState(action, initialState);
+  return (
+    <form action={formAction} className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
+      <FormAlert state={state} />
+      <Select name="currency" label="Currency" value="USD" options={currencyOptions} errors={state.errors?.currency} />
+      <Field name="rateToUSD" label="Rate to USD (1 unit = ? USD)" type="number" errors={state.errors?.rateToUSD} />
+      <Field name="effectiveDate" label="Effective date" type="date" value={new Date().toISOString().slice(0, 10)} errors={state.errors?.effectiveDate} />
+      <div className="flex items-end">
+        <Button type="submit" className="w-full">
+          <Save className="h-4 w-4" /> Save rate
+        </Button>
+      </div>
+    </form>
   );
 }
 

@@ -271,10 +271,11 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.companyId = user.companyId;
+        token.activeCompanyId = user.companyId;
         token.companyName = user.companyName;
         token.scope = user.scope;
         token.roles = user.roles;
@@ -297,12 +298,29 @@ export const authOptions: NextAuthOptions = {
         token.displayClientCode = accessProfile.displayClientCode;
       }
 
+      // The company-switcher calls session.update({ activeCompanyId }) —
+      // the server action that runs first already validated the target
+      // company is one this user may switch into, so this just persists
+      // that decision into the token. Any other update() call (e.g. the
+      // profile-refresh above) simply won't include this field, leaving
+      // activeCompanyId untouched.
+      if (
+        trigger === "update" &&
+        token.scope !== "CLIENT" &&
+        session &&
+        typeof session === "object" &&
+        "activeCompanyId" in session
+      ) {
+        token.activeCompanyId = (session as { activeCompanyId: string | null }).activeCompanyId;
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
         session.user.companyId = token.companyId;
+        session.user.activeCompanyId = token.activeCompanyId ?? token.companyId;
         session.user.companyName = token.companyName;
         session.user.scope = token.scope ?? "COMPANY";
         session.user.roles = token.roles ?? [];

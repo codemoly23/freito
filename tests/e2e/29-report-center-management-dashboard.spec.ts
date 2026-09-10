@@ -11,13 +11,13 @@ test.describe("Phase 16 Report Center and Management Dashboard", () => {
     await loginAsCompanyAdmin(page);
 
     await expect(page.getByRole("heading", { name: "Today's Operational Control Center" })).toBeVisible();
-    await expect(page.getByText("Monitor shipments, documents, delivery, finance closeout, and reports from one place.")).toBeVisible();
+    await expect(page.getByText("Monitor shipments, documents, delivery, finance closeout, and reports from one unified command console.")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Quick Actions" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "New Shipment Request", exact: true })).toHaveAttribute("href", "/dashboard/shipment-requests/new");
-    await expect(page.getByRole("link", { name: "New Shipment Job", exact: true })).toHaveAttribute("href", "/dashboard/shipments/new");
-    await expect(page.getByRole("link", { name: "New Quotation", exact: true })).toHaveAttribute("href", "/dashboard/quotations/new");
-    await expect(page.getByRole("link", { name: "View Report Center", exact: true })).toHaveAttribute("href", "/dashboard/reports");
-    await expect(page.getByRole("link", { name: "View Financial Reports", exact: true })).toHaveAttribute("href", "/dashboard/reports/financial");
+    await expect(page.getByRole("link", { name: "New Shipment Request", exact: true }).first()).toHaveAttribute("href", "/dashboard/shipment-requests/new");
+    await expect(page.getByRole("link", { name: "New Shipment Job", exact: true }).first()).toHaveAttribute("href", "/dashboard/shipments/new");
+    await expect(page.getByRole("link", { name: "New Quotation", exact: true }).first()).toHaveAttribute("href", "/dashboard/quotations/new");
+    await expect(page.getByRole("link", { name: "View Report Center", exact: true }).first()).toHaveAttribute("href", "/dashboard/reports");
+    await expect(page.getByRole("link", { name: "View Financial Reports", exact: true }).first()).toHaveAttribute("href", "/dashboard/reports/financial");
 
     await expect(page.getByRole("heading", { name: "Main KPI Overview" })).toBeVisible();
     await expect(page.getByText("Total Shipments", { exact: true })).toBeVisible();
@@ -56,7 +56,7 @@ test.describe("Phase 16 Report Center and Management Dashboard", () => {
 
     await expect(page.getByRole("heading", { name: "Main KPI Overview" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Quick Actions" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "View Report Center", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "View Report Center", exact: true }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "View Financial Reports", exact: true })).toHaveCount(0);
     await expect(page.getByText("Finance Close Pending", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Finance KPI Section" })).toBeVisible();

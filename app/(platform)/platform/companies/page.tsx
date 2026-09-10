@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Building2 } from "lucide-react";
-import { savePlatformCompany, suspendPlatformCompany } from "@/lib/actions/platform";
+import { initializeCompanyAccounting, savePlatformCompany, suspendPlatformCompany } from "@/lib/actions/platform";
 import { prisma } from "@/lib/db/prisma";
 import { hasPermission, requirePlatformPermission } from "@/lib/permissions/rbac";
 import { PlatformCompanyForm } from "@/components/forms/platform-forms";
@@ -33,6 +33,7 @@ export default async function PlatformCompaniesPage({ searchParams }: PageProps)
       },
       include: {
         companymoduleaccess: { orderBy: { moduleKey: "asc" } },
+        ledgergroup: { select: { id: true }, take: 1 },
       },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -48,6 +49,7 @@ export default async function PlatformCompaniesPage({ searchParams }: PageProps)
   const companies = rawCompanies.map((c) => ({
     ...c,
     moduleAccess: c.companymoduleaccess,
+    accountingInitialized: c.ledgergroup.length > 0,
   }));
   const editing = rawEditing
     ? { ...rawEditing, moduleAccess: rawEditing.companymoduleaccess }
@@ -141,6 +143,14 @@ export default async function PlatformCompaniesPage({ searchParams }: PageProps)
                               <input type="hidden" name="id" value={company.id} />
                               <Button size="sm" variant="secondary" type="submit">
                                 {company.status === "ACTIVE" ? "Suspend" : "Activate"}
+                              </Button>
+                            </form>
+                          ) : null}
+                          {canUpdate && !company.accountingInitialized ? (
+                            <form action={initializeCompanyAccounting}>
+                              <input type="hidden" name="id" value={company.id} />
+                              <Button size="sm" variant="outline" type="submit">
+                                Initialize Accounting
                               </Button>
                             </form>
                           ) : null}

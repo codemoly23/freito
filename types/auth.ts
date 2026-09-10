@@ -5,6 +5,7 @@ declare module "next-auth" {
     user: {
       id: string;
       companyId: string | null;
+      activeCompanyId: string | null;
       companyName: string | null;
       customerId: string | null;
       clientPortalAccountId: string | null;
@@ -36,6 +37,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     companyId: string | null;
+    activeCompanyId: string | null;
     companyName: string | null;
     customerId: string | null;
     clientPortalAccountId: string | null;

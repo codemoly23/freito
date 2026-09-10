@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { branchScopeWhereNullable, getCurrentBranchScope } from "@/lib/access/branch-access";
 import { getEnabledModules, requireActiveCompanyAccess } from "@/lib/access/company-access";
+import { getSwitchableCompanies } from "@/lib/actions/company-switch";
 import { prisma } from "@/lib/db/prisma";
 import { hasPermission, requireUserScope } from "@/lib/permissions/rbac";
 
@@ -13,6 +14,7 @@ export default async function DashboardLayout({
   const user = await requireUserScope("COMPANY");
   await requireActiveCompanyAccess(user.companyId);
   const enabledModules = await getEnabledModules(user.companyId);
+  const switchableCompanies = await getSwitchableCompanies();
   const canViewNotifications = hasPermission(user, "notifications:view");
   const unreadNotificationCount = canViewNotifications
     ? await prisma.notification.count({
@@ -39,6 +41,8 @@ export default async function DashboardLayout({
           unreadNotificationCount={unreadNotificationCount}
           showSearch
           canUseAiSearch={hasPermission(user, "ai:use")}
+          switchableCompanies={switchableCompanies}
+          activeCompanyId={user.activeCompanyId ?? user.companyId}
         />
         {children}
       </div>

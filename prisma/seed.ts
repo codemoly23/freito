@@ -184,6 +184,7 @@ const companyPermissionDefinitions = [
   ["reports:financial", "View internal financial and profitability reports"],
   ["reports:operations", "View operational, sales, document, and workflow reports"],
   ["reports:export", "Export report data"],
+  ["reports:accounting", "View Trial Balance, Profit & Loss, and Balance Sheet statements"],
   ["tasks:list", "List company tasks"],
   ["tasks:view", "View company tasks"],
   ["tasks:create", "Create company tasks"],
@@ -241,8 +242,20 @@ const companyPermissionDefinitions = [
   ["ai:configure", "Configure company AI provider settings"],
 ] as const;
 
+// Deliberately NOT part of companyPermissionDefinitions: these must never
+// flow into companySafePermissionKeys (which every COMPANY_ADMIN role gets
+// in full at seed time) as a blanket grant to every tenant. They're seeded
+// directly onto specific roles below instead, and are excluded from
+// lib/actions/roles.ts's companySafePermissions allowlist so a company
+// admin can never grant or revoke them via the Roles UI afterwards — only
+// a platform-level/seed action can.
+const seedOnlyPermissionDefinitions = [
+  ["companies:switch", "Switch to another company's data for cross-company audit reporting"],
+] as const;
+
 const permissionDefinitions = [
   ...platformPermissionDefinitions,
+  ...seedOnlyPermissionDefinitions,
   ...companyPermissionDefinitions,
 ] as const;
 
@@ -298,7 +311,10 @@ const rolePermissions: Record<RoleCode, string[]> = {
     "platform:licenses:view",
     "platform:licenses:update",
   ],
-  COMPANY_ADMIN: companySafePermissionKeys.filter((key) => key !== "shipments:view_assigned"),
+  COMPANY_ADMIN: [
+    ...companySafePermissionKeys.filter((key) => key !== "shipments:view_assigned"),
+    "companies:switch",
+  ],
   OPERATIONS_MANAGER: [
     "dashboard:view",
     "customers:manage",
@@ -339,6 +355,7 @@ const rolePermissions: Record<RoleCode, string[]> = {
     "payables:view",
     "reports:view",
     "reports:operations",
+    "companies:switch",
     "tasks:list",
     "tasks:view",
     "tasks:create",
@@ -448,6 +465,7 @@ const rolePermissions: Record<RoleCode, string[]> = {
     "accounts:manage",
     "reports:view",
     "reports:financial",
+    "reports:accounting",
     "tasks:list",
     "tasks:view",
     "tasks:create",

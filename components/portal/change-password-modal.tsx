@@ -61,8 +61,8 @@ export function ChangePasswordModal({
       setErrorMessage("Please enter your current password.");
       return;
     }
-    if (!newPassword || newPassword.length < 6) {
-      setErrorMessage("New password must be at least 6 characters long.");
+    if (!newPassword || newPassword.length < 8) {
+      setErrorMessage("New password must be at least 8 characters long.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -184,7 +184,7 @@ export function ChangePasswordModal({
                   <Input
                     id="newPassword"
                     type={showNew ? "text" : "password"}
-                    placeholder="Enter new password (min. 6 chars)"
+                    placeholder="Enter new password (min. 8 chars)"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="pr-10"

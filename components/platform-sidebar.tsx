@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  DollarSign,
   KeyRound,
   LayoutDashboard,
   LifeBuoy,
@@ -27,6 +28,7 @@ type NavigationItem = {
 const navigation: NavigationItem[] = [
   { name: "Platform Dashboard", href: "/platform", icon: LayoutDashboard },
   { name: "Companies", href: "/platform/companies", icon: Building2, permission: "platform:companies:view" },
+  { name: "Exchange Rates", href: "/platform/exchange-rates", icon: DollarSign, permission: "platform:companies:view" },
   { name: "Subscriptions / Licenses", href: "/platform/subscriptions", icon: KeyRound, permission: "platform:subscriptions:view" },
   { name: "Module Access", href: "/platform/modules", icon: PackageCheck, permission: "platform:modules:update" },
   { name: "Platform Audit", href: "/platform/audit", icon: ClipboardList, permission: "platform:audit:view" },
@@ -61,20 +63,20 @@ export function PlatformSidebar({
   return (
     <aside
       className={cn(
-        "hidden shrink-0 border-r border-slate-800 bg-slate-950 text-white lg:block transition-all duration-300 ease-in-out",
+        "hidden shrink-0 border-r border-[#1e293b] bg-[#020617] text-[#ffffff] lg:block transition-all duration-300 ease-in-out",
         isCollapsed ? "w-20" : "w-72"
       )}
     >
       <div
         className={cn(
-          "flex h-16 items-center border-b border-white/10 transition-all duration-300",
+          "flex h-16 items-center border-b border-[#ffffff]/10 transition-all duration-300",
           isCollapsed ? "justify-center px-2" : "justify-between px-5"
         )}
       >
         {!isCollapsed ? (
           <div className="relative h-7 w-28 filter brightness-0 invert">
             <Image
-              src="/images/freito-logo.png"
+              src="/images/freito-logo.svg"
               alt="FreightFast"
               fill
               priority
@@ -156,7 +158,7 @@ export function PlatformSidebar({
         <button
           onClick={toggleCollapse}
           className={cn(
-            "rounded-md p-1.5 hover:bg-white/10 text-slate-300 transition-colors",
+            "rounded-md p-1.5 hover:bg-[#ffffff]/10 text-[#cbd5e1] transition-colors",
             isCollapsed && "ml-1"
           )}
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -182,12 +184,12 @@ export function PlatformSidebar({
               title={isCollapsed ? item.name : undefined}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex items-center text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-white/10 hover:text-white",
+                "flex items-center text-sm font-medium text-[#cbd5e1] transition-all duration-200 hover:bg-[#ffffff]/10 hover:text-[#ffffff]",
                 isCollapsed ? "justify-center p-2.5 mx-auto w-10 h-10 rounded-md" : "gap-3 rounded-md px-3 py-2.5",
                 isActive && (
                   isCollapsed
-                    ? "bg-cyan-600 text-white hover:bg-cyan-500"
-                    : "bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 text-white hover:from-cyan-600 hover:to-indigo-600 shadow-md shadow-cyan-950/20"
+                    ? "bg-cyan-600 text-[#ffffff] hover:bg-cyan-500"
+                    : "bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 text-[#ffffff] hover:from-cyan-600 hover:to-indigo-600 shadow-md shadow-cyan-950/20"
                 )
               )}
             >

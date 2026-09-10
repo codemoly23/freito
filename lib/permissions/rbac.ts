@@ -82,6 +82,8 @@ export const permissions = {
   reportsFinancial: "reports:financial",
   reportsOperations: "reports:operations",
   reportsExport: "reports:export",
+  reportsAccounting: "reports:accounting",
+  companiesSwitch: "companies:switch",
   tasksList: "tasks:list",
   tasksView: "tasks:view",
   tasksCreate: "tasks:create",

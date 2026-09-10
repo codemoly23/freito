@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, ClipboardList, FileCheck2, Landmark, Ship, Users, Workflow } from "lucide-react";
+import { BarChart3, BookOpen, ClipboardList, FileCheck2, Landmark, Ship, Users, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,9 @@ const reports: {
   { section: "financial", title: "Financial Reports", description: "Receivable, payable, final profit, and finance closeout overview.", href: "/dashboard/reports/financial", icon: Landmark },
   { section: "customers", title: "Customer Reports", description: "Customer shipment, quotation, invoicing, and receivable summaries.", href: "/dashboard/reports/customers", icon: Users },
   { section: "vendors", title: "Vendor Reports", description: "Vendor bills, payable balances, and assigned workflow activity.", href: "/dashboard/reports/vendors", icon: Users },
+  { section: "accounting", title: "Trial Balance", description: "Every ledger's net debit/credit balance for the selected period.", href: "/dashboard/reports/accounting/trial-balance", icon: BookOpen },
+  { section: "accounting", title: "Profit & Loss Statement", description: "Direct/indirect income and expense, gross and net profit.", href: "/dashboard/reports/accounting/profit-loss", icon: BookOpen },
+  { section: "accounting", title: "Balance Sheet", description: "Assets vs. Liabilities & Equity as of the period end.", href: "/dashboard/reports/accounting/balance-sheet", icon: BookOpen },
 ];
 
 export default async function ReportsPage({
