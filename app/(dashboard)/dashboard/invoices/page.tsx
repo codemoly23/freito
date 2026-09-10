@@ -22,7 +22,7 @@ export default async function InvoicesPage() {
   return (
     <main className="space-y-6 p-4 lg:p-6">
       <div className="flex items-start justify-between">
-        <div><Badge variant="secondary">Phase 6</Badge><h1 className="mt-3 text-2xl font-semibold">Invoices</h1></div>
+        <div><h1 className="mt-3 text-2xl font-semibold">Invoices</h1></div>
         <div className="flex gap-2">
           {hasPermission(user, "exports:csv") ? <Button asChild size="sm" variant="outline"><a download href="/api/exports/invoices">Download CSV</a></Button> : null}
           {hasPermission(user, "invoices:create") ? <Button asChild><Link href="/dashboard/invoices/new"><Plus className="h-4 w-4" />New invoice</Link></Button> : null}

@@ -27,7 +27,6 @@ export default async function CarrierQueriesPage() {
     <main className="space-y-6 p-4 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase text-slate-500">Phase 8I</p>
           <h1 className="text-2xl font-semibold">Carrier Queries</h1>
           <p className="text-sm text-slate-500">Shipment-wise buying queries, log timestamps, and provider proposals.</p>
         </div>

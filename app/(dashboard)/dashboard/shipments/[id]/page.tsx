@@ -833,7 +833,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: PageP
           <CardHeader>
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <CardTitle>Workflow Engine (Phase 9 & 10)</CardTitle>
+                <CardTitle>Workflow Engine</CardTitle>
                 <CardDescription>
                   Strict sequential milestones for {shipment.transportMode} {shipment.shipmentType} ({shipment.serviceScope.replaceAll("_", " ")}). Every stage must satisfy required fields, documents, and approvals before proceeding.
                 </CardDescription>
@@ -1323,7 +1323,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: PageP
 
         {/* Operational Status References */}
         <div className="pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-600 mb-4">Operations Milestone References (Phase 3 - 8)</h3>
+          <h3 className="text-sm font-semibold text-slate-600 mb-4">Operations Milestone References</h3>
           <div className="grid gap-4 xl:grid-cols-2">
             {/* Bill of Lading card */}
             <Card>

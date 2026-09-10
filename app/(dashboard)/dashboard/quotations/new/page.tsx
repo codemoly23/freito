@@ -2,7 +2,6 @@ import { saveQuotation } from "@/lib/actions/finance";
 import { requireModuleAccess } from "@/lib/access/company-access";
 import { prisma } from "@/lib/db/prisma";
 import { hasPermission, requirePermission } from "@/lib/permissions/rbac";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { QuotationForm } from "@/components/forms/finance-forms";
 
@@ -48,8 +47,7 @@ export default async function NewQuotationPage() {
   return (
     <main className="space-y-6 p-4 lg:p-6">
       <div>
-        <Badge variant="secondary">Phase 5</Badge>
-        <h1 className="mt-3 text-2xl font-semibold text-slate-950">Create Quotation</h1>
+        <h1 className="text-2xl font-semibold text-slate-950">Create Quotation</h1>
       </div>
       <Card>
         <CardHeader>

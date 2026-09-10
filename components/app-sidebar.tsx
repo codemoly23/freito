@@ -376,7 +376,7 @@ export function AppSidebar({
                   type="button"
                   onClick={() => toggleSection(group.label)}
                   aria-expanded={isOpen}
-                  className="mb-1 flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 transition-colors hover:text-slate-700 dark:text-cyan-500/80 dark:hover:text-cyan-400"
+                  className="mb-1 flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:text-slate-900 dark:text-cyan-500/80 dark:hover:text-cyan-400"
                 >
                   <span className="flex items-center gap-2">
                     <group.icon className="h-3.5 w-3.5 shrink-0" />

@@ -63,8 +63,7 @@ export default async function NotificationDeliveriesPage({
   return (
     <main className="space-y-6 p-4 lg:p-6">
       <div>
-        <Badge variant="secondary">Phase 8C</Badge>
-        <h1 className="mt-3 text-2xl font-semibold">Delivery Outbox</h1>
+        <h1 className="text-2xl font-semibold">Delivery Outbox</h1>
         <p className="mt-1 text-sm text-slate-600">Prepared external notifications. No provider sends are active automatically; every send requires explicit manual approval.</p>
       </div>
       {deliveryDryRun() ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Dry-run enabled: Send Now simulates provider success without external delivery.</div> : null}

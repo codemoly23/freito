@@ -26,8 +26,7 @@ export default async function ImportsPage() {
     <main className="space-y-6 p-4 lg:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Badge variant="secondary">Phase 05</Badge>
-          <h1 className="mt-3 text-2xl font-semibold text-slate-950">Data Import</h1>
+          <h1 className="text-2xl font-semibold text-slate-950">Data Import</h1>
           <p className="mt-1 text-sm text-slate-600">Import customers or vendors from a CSV file.</p>
         </div>
         <Button asChild>

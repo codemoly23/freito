@@ -51,7 +51,6 @@ export default async function NewCarrierQueryPage({ searchParams }: { searchPara
   return (
     <main className="space-y-6 p-4 lg:p-6">
       <div>
-        <p className="text-xs uppercase text-slate-500">Phase 8I</p>
         <h1 className="text-2xl font-semibold">New Carrier Query</h1>
       </div>
       <Card>

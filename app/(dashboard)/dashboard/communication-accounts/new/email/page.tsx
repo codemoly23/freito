@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createEmailSmtpAccount } from "@/lib/actions/communication-accounts";
@@ -13,7 +12,7 @@ export default async function NewEmailAccountPage({
   const { error } = await searchParams;
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-4 lg:p-6">
-      <div><Badge variant="secondary">Phase 8C</Badge><h1 className="mt-3 text-2xl font-semibold">Add Email SMTP Account</h1><p className="mt-1 text-sm text-slate-600">Credentials are encrypted server-side and are never shown after saving.</p></div>
+      <div><h1 className="mt-3 text-2xl font-semibold">Add Email SMTP Account</h1><p className="mt-1 text-sm text-slate-600">Credentials are encrypted server-side and are never shown after saving.</p></div>
       {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
       <form action={createEmailSmtpAccount} className="grid gap-4 rounded-lg border bg-white p-5 md:grid-cols-2">
         <label className="space-y-1 text-sm"><span>Display name</span><Input name="displayName" required /></label>

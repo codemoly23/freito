@@ -62,7 +62,6 @@ export default async function PlatformCompaniesPage({ searchParams }: PageProps)
   return (
     <main className="space-y-6 p-4 lg:p-6">
       <div>
-        <Badge variant="secondary">Phase 5.5</Badge>
         <h1 className="mt-3 text-2xl font-semibold text-slate-950">Platform companies</h1>
         <p className="mt-1 text-sm text-slate-600">
           Create tenants, manage lifecycle, and control licensed module access.

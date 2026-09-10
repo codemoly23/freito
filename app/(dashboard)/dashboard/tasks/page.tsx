@@ -60,7 +60,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   ]);
   const canEdit = hasPermission(user, "tasks:edit");
   return <main className="space-y-6 p-4 lg:p-6">
-    <div className="flex flex-wrap items-start justify-between gap-3"><div><Badge variant="secondary">Phase 8H</Badge><h1 className="mt-3 text-2xl font-semibold">Tasks</h1><p className="text-sm text-slate-600">Internal freight operations and team collaboration.</p></div><div className="flex gap-2">{hasPermission(user, "exports:csv") ? <Button asChild size="sm" variant="outline"><a download href="/api/exports/tasks">Download CSV</a></Button> : null}{hasPermission(user, "tasks:create") ? <Button asChild><Link href="/dashboard/tasks/new">Create Task</Link></Button> : null}</div></div>
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="mt-3 text-2xl font-semibold">Tasks</h1><p className="text-sm text-slate-600">Internal freight operations and team collaboration.</p></div><div className="flex gap-2">{hasPermission(user, "exports:csv") ? <Button asChild size="sm" variant="outline"><a download href="/api/exports/tasks">Download CSV</a></Button> : null}{hasPermission(user, "tasks:create") ? <Button asChild><Link href="/dashboard/tasks/new">Create Task</Link></Button> : null}</div></div>
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Kpi label="My open tasks" value={myOpen} /><Kpi label="Overdue tasks" value={overdue} /><Kpi label="Due today" value={dueToday} /><Kpi label="Unassigned tasks" value={unassigned} /></section>
     <AISuggestedTasksSection />
     <form className="grid gap-3 rounded-lg border bg-white p-4 md:grid-cols-6">

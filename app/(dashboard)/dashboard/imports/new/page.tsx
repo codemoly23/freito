@@ -10,7 +10,7 @@ export default async function NewImportPage() {
   return (
     <main className="space-y-6 p-4 lg:p-6">
       <div>
-        <Badge variant="secondary">Phase 05 · Step 1 of 3</Badge>
+        <Badge variant="secondary">Step 1 of 3</Badge>
         <h1 className="mt-3 text-2xl font-semibold text-slate-950">Upload CSV file</h1>
         <p className="mt-1 text-sm text-slate-600">
           Import customer or vendor records. Preview never writes to the database -- you confirm before anything is created.

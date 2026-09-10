@@ -26,8 +26,7 @@ export default async function NotificationTemplatesPage() {
   return (
     <main className="space-y-6 p-4 lg:p-6">
       <div>
-        <Badge variant="secondary">Phase 8B</Badge>
-        <h1 className="mt-3 text-2xl font-semibold">Notification Templates</h1>
+        <h1 className="text-2xl font-semibold">Notification Templates</h1>
         <p className="mt-1 text-sm text-slate-600">Customer-safe templates used to prepare future external deliveries.</p>
       </div>
       <section className="space-y-3">

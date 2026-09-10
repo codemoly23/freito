@@ -28,7 +28,7 @@ export default async function PlatformSubscriptionsPage() {
         <Badge variant="secondary">Architecture</Badge>
         <h1 className="mt-3 text-2xl font-semibold text-slate-950">Subscriptions / Licenses</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Read-only license overview for Phase 5.5. Edit values from Platform Companies.
+          Read-only license overview. Edit values from Platform Companies.
         </p>
       </div>
       <Card>

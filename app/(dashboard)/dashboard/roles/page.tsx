@@ -35,7 +35,6 @@ export default async function RolesPage() {
   return (
     <main className="space-y-6 p-4 lg:p-6">
       <div>
-        <Badge variant="secondary">Phase 2</Badge>
         <h1 className="mt-3 text-2xl font-semibold text-slate-950">
           Roles & Permissions
         </h1>

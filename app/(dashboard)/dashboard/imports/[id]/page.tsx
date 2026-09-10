@@ -34,8 +34,7 @@ export default async function ImportJobPage({ params }: { params: Promise<{ id: 
   return (
     <main className="space-y-6 p-4 lg:p-6">
       <div>
-        <Badge variant="secondary">Phase 05</Badge>
-        <h1 className="mt-3 text-2xl font-semibold text-slate-950">{job.fileName}</h1>
+        <h1 className="text-2xl font-semibold text-slate-950">{job.fileName}</h1>
         <p className="mt-1 text-sm text-slate-600">
           {entityType === "CUSTOMER" ? "Customer" : "Vendor"} import &middot; {job.rowCount ?? 0} rows &middot; <Badge variant="secondary">{job.status}</Badge>
         </p>

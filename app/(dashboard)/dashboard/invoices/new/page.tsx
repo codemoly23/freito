@@ -2,7 +2,6 @@ import { saveInvoice } from "@/lib/actions/billing";
 import { prisma } from "@/lib/db/prisma";
 import { requireBillingPage } from "@/lib/billing/page-helpers";
 import { InvoiceForm } from "@/components/forms/billing-forms";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function NewInvoicePage() {
@@ -56,5 +55,5 @@ export default async function NewInvoicePage() {
         })),
     };
   });
-  return <main className="space-y-6 p-4 lg:p-6"><div><Badge variant="secondary">Phase 6</Badge><h1 className="mt-3 text-2xl font-semibold">Create invoice</h1></div><Card><CardHeader><CardTitle>Invoice details</CardTitle></CardHeader><CardContent><InvoiceForm action={saveInvoice} customers={customers} shipments={shipments} quotations={quotationOptions} /></CardContent></Card></main>;
+  return <main className="space-y-6 p-4 lg:p-6"><div><h1 className="mt-3 text-2xl font-semibold">Create invoice</h1></div><Card><CardHeader><CardTitle>Invoice details</CardTitle></CardHeader><CardContent><InvoiceForm action={saveInvoice} customers={customers} shipments={shipments} quotations={quotationOptions} /></CardContent></Card></main>;
 }

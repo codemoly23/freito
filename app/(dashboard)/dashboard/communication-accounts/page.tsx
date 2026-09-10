@@ -27,8 +27,7 @@ export default async function CommunicationAccountsPage() {
     <main className="space-y-6 p-4 lg:p-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <Badge variant="secondary">Phase 8C</Badge>
-          <h1 className="mt-3 text-2xl font-semibold">Communication Accounts</h1>
+          <h1 className="text-2xl font-semibold">Communication Accounts</h1>
           <p className="mt-1 text-sm text-slate-600">Company and employee-owned SMTP and WhatsApp provider connections.</p>
         </div>
         {canConnect ? (

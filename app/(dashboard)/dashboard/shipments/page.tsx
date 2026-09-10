@@ -203,7 +203,6 @@ export default async function ShipmentsPage({ searchParams }: PageProps) {
     <main className="space-y-6 p-4 lg:p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <Badge variant="secondary">Phase 3</Badge>
           <h1 className="mt-3 text-2xl font-semibold text-slate-950">Shipments</h1>
           <p className="mt-1 text-sm text-slate-600">
             Central job files for import and export operations.
