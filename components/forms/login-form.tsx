@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Key, Loader2, LogIn } from "lucide-react";
+import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
@@ -172,95 +172,6 @@ export function LoginForm({
         )}
         Sign in
       </Button>
-
-      {hydrated && (
-        <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
-          <div className="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            <Key className="h-3.5 w-3.5 text-slate-400" />
-            <span>Demo Access Profiles</span>
-          </div>
-          <p className="text-[11px] text-slate-500 mb-3">
-            Click any profile below to automatically populate the login fields.
-          </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {loginScope === "PLATFORM" && [
-              { label: "Platform Owner", email: "platform@freightcontrol.com", password: "Platform@2026" }
-            ].map((cred) => (
-              <button
-                key={cred.email}
-                type="button"
-                onClick={() => {
-                  form.setValue("email", cred.email);
-                  form.setValue("password", cred.password);
-                  form.clearErrors();
-                  setAuthError(null);
-                }}
-                className="col-span-2 flex flex-col items-start rounded-md border border-slate-200 bg-white p-2.5 text-left text-xs transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 group cursor-pointer"
-              >
-                <span className="font-semibold text-slate-700 group-hover:text-slate-900 flex items-center justify-between w-full">
-                  {cred.label}
-                  <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded group-hover:bg-slate-200 transition-colors">
-                    Autofill
-                  </span>
-                </span>
-                <span className="text-slate-400 truncate w-full mt-0.5">{cred.email}</span>
-              </button>
-            ))}
-
-            {loginScope === "CLIENT" && [
-              { label: "Client Portal User", email: "client@example.com", password: "Admin123" }
-            ].map((cred) => (
-              <button
-                key={cred.email}
-                type="button"
-                onClick={() => {
-                  form.setValue("email", cred.email);
-                  form.setValue("password", cred.password);
-                  form.clearErrors();
-                  setAuthError(null);
-                }}
-                className="col-span-2 flex flex-col items-start rounded-md border border-slate-200 bg-white p-2.5 text-left text-xs transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 group cursor-pointer"
-              >
-                <span className="font-semibold text-slate-700 group-hover:text-slate-900 flex items-center justify-between w-full">
-                  {cred.label}
-                  <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded group-hover:bg-slate-200 transition-colors">
-                    Autofill
-                  </span>
-                </span>
-                <span className="text-slate-400 truncate w-full mt-0.5">{cred.email}</span>
-              </button>
-            ))}
-
-            {loginScope === "COMPANY" && [
-              { label: "Company Admin", email: "admin@freightfast-demo.codemoly.io", password: "FreightFast@2026" },
-              { label: "Operations Manager", email: "operations@freightcontrol.com", password: "Staff@2026" },
-              { label: "Documentation Officer", email: "documentation@freightcontrol.com", password: "Staff@2026" },
-              { label: "Accounts Officer", email: "accounts@freightcontrol.com", password: "Staff@2026" },
-              { label: "Sales Executive", email: "sales@freightcontrol.com", password: "Staff@2026" }
-            ].map((cred) => (
-              <button
-                key={cred.email}
-                type="button"
-                onClick={() => {
-                  form.setValue("email", cred.email);
-                  form.setValue("password", cred.password);
-                  form.clearErrors();
-                  setAuthError(null);
-                }}
-                className="flex flex-col items-start rounded-md border border-slate-200 bg-white p-2.5 text-left text-xs transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 group cursor-pointer"
-              >
-                <span className="font-semibold text-slate-700 group-hover:text-slate-900 flex items-center justify-between w-full gap-1">
-                  <span className="truncate">{cred.label}</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded group-hover:bg-slate-200 transition-colors shrink-0">
-                    Autofill
-                  </span>
-                </span>
-                <span className="text-slate-400 truncate w-full mt-0.5">{cred.email}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </form>
   );
 }

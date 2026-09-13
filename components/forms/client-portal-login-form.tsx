@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Key, Loader2, LogIn } from "lucide-react";
+import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useState, useSyncExternalStore } from "react";
 import { useForm } from "react-hook-form";
@@ -91,41 +91,6 @@ export function ClientPortalLoginForm({ companySlug }: { companySlug: string }) 
         )}
         Sign in
       </Button>
-
-      {hydrated && (() => {
-        const currentYear = new Date().getFullYear();
-        const demoClientCode = `DFC-CL-${currentYear}-0001`;
-        const demoPassword = "Client@2026";
-        return (
-          <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
-            <div className="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              <Key className="h-3.5 w-3.5 text-slate-400" />
-              <span>Demo Access Profiles</span>
-            </div>
-            <p className="text-[11px] text-slate-500 mb-3">
-              Click below to automatically populate the client credentials.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                form.setValue("clientCode", demoClientCode);
-                form.setValue("password", demoPassword);
-                form.clearErrors();
-                setAuthError(null);
-              }}
-              className="flex flex-col items-start w-full rounded-md border border-slate-200 bg-white p-2.5 text-left text-xs transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 group cursor-pointer"
-            >
-              <span className="font-semibold text-slate-700 group-hover:text-slate-900 flex items-center justify-between w-full">
-                Client Portal User
-                <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded group-hover:bg-slate-200 transition-colors">
-                  Autofill
-                </span>
-              </span>
-              <span className="text-slate-400 truncate w-full mt-0.5">ID: {demoClientCode}</span>
-            </button>
-          </div>
-        );
-      })()}
     </form>
   );
 }
