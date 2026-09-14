@@ -108,7 +108,7 @@ async function ensureBranchRolesAdmin(companyId: string, contactEmail: string | 
     const taken = await prisma.user.findUnique({ where: { email: adminEmail } });
     if (taken) adminEmail = "";
   }
-  if (!adminEmail) adminEmail = `admin+${randomUUID().slice(0, 8)}@placeholder.freito.local`;
+  if (!adminEmail) adminEmail = `admin+${randomUUID().slice(0, 8)}@placeholder.freightfast.local`;
 
   const adminPassword = generateClientPortalPassword();
   const passwordHash = await hashPassword(adminPassword);

@@ -1,6 +1,28 @@
-# FreightFast - Freight Forwarding & Logistics ERP SaaS Platform
+# FreightFast - Freight Forwarding & Logistics ERP Platform
 
-**FreightFast** is an enterprise-grade Freight Forwarding ERP SaaS platform designed to streamline freight forwarding operations, customer inquiries, quotations, shipping job files, document compliance, PDF generators, finance closeouts, and client communication.
+**FreightFast** is an enterprise-grade, multi-company Freight Forwarding ERP platform designed to streamline freight forwarding operations, customer inquiries, quotations, shipping job files, document compliance, PDF generators, finance closeouts, and client communication.
+
+---
+
+## AI-Powered Features
+
+FreightFast layers a full AI assistant suite on top of the core ERP, gated behind a platform kill-switch, a per-company toggle, and a daily request cap — off by default, and every AI-driven feature routes through the same permission and quota gate.
+
+- **AI Shipment Assistant:** Chat-style Q&A over a shipment's status, tasks, and open issues.
+- **AI Document Reader:** Extracts shipment and document fields from an uploaded file.
+- **AI Document Checker:** Flags missing, incorrect, or inconsistent fields on a freight document.
+- **AI Document Cross-Check:** Compares multiple documents on a shipment and flags mismatches.
+- **AI Quotation Generator:** Drafts charge lines from customer, shipment, and pricing context.
+- **AI Email Generator:** Drafts a customer-ready email from shipment and operational context.
+- **AI Shipment Summary:** Turns a full job file into a short operational summary.
+- **AI Report Insights:** Explains notable trends and changes on financial reports.
+- **AI Smart Search:** Natural-language mode for the global search box.
+- **AI Customer Insights:** Summarizes a customer's history, activity, and opportunities.
+- **AI Delay Alerts:** Flags shipments at risk of delay from ETA and workflow data.
+- **AI Profit Analysis:** Highlights low-margin shipments against historical averages.
+- **AI Task Suggestions:** Recommends next actions from open exceptions and pending work.
+- **AI Shipment Health Score:** Scores a shipment from status, milestones, documents, and conditions.
+- **AI Exception Radar:** Surfaces shipments, documents, or workflows that need attention.
 
 ---
 
@@ -58,7 +80,7 @@ cp .env.example .env
 Configured key environment variables:
 
 ```env
-DATABASE_URL="postgresql://username:password@localhost:5432/freito_db?schema=public"
+DATABASE_URL="mysql://username:password@localhost:3306/freight_control"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-super-secret-key-32-chars-long"
 ```
@@ -133,9 +155,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Default Login Credentials
 
-- **Super Admin:** `admin@freito.com` / `Admin@123456`
-- **Company Admin:** `company.admin@demo.com` / `Demo@123456`
-- **Operations Officer:** `ops@demo.com` / `Demo@123456`
+Running `npx prisma db seed` creates a Platform Owner plus five company-scoped staff accounts. Every seeded account shares the password set in `SEED_ADMIN_PASSWORD` (falls back to `Admin123` if unset). See [`Documentation/installation-guide.html`](./Documentation/installation-guide.html) for the full list of accounts and their emails.
 
 ---
 

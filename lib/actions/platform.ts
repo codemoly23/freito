@@ -301,7 +301,7 @@ async function provisionDefaultCompanyAccess(companyId: string, contactEmail: st
     if (existing) adminEmail = "";
   }
   if (!adminEmail) {
-    adminEmail = `admin+${randomUUID().slice(0, 8)}@placeholder.freito.local`;
+    adminEmail = `admin+${randomUUID().slice(0, 8)}@placeholder.freightfast.local`;
   }
 
   const adminPassword = generateClientPortalPassword();

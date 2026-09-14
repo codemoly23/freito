@@ -190,7 +190,7 @@ const defaultModules = [
 
 async function upsertCompany() {
   const existing = await prisma.company.findFirst({
-    where: { OR: [{ name: "FreightFast Demo Company" }, { name: "Freito Demo Company" }, { name: "Freight Control Demo Company" }] },
+    where: { name: "FreightFast Demo Company" },
   });
 
   const data = {

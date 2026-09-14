@@ -490,9 +490,9 @@ footer.page-footer {
       <p class="section-dek">A single Next.js application with a MySQL-compatible database. There's no separate backend service to stand up — the app, API routes, and background job endpoints all ship from the same codebase.</p>
       <div class="prose">
         <h3 class="first">Three surfaces, one app</h3>
-        <p>The build serves three distinct sign-in surfaces from the same deployment: an <strong>operations dashboard</strong> for company staff (quotations, shipments, finance), a <strong>platform console</strong> for the SaaS operator managing tenant companies, and a <strong>client portal</strong> your customers use to track their own shipments and documents. Routing between them is host-based, configured during installation.</p>
+        <p>The build serves three distinct sign-in surfaces from the same deployment: an <strong>operations dashboard</strong> for company staff (quotations, shipments, finance), a <strong>platform console</strong> for the operator managing multiple client companies from one deployment, and a <strong>client portal</strong> your customers use to track their own shipments and documents. Routing between them is host-based, configured during installation.</p>
         <h3>Multi-tenant by design</h3>
-        <p>Every record belongs to exactly one company, and within a company, to exactly one branch. If you're installing this for a single freight forwarder, you'll use one company with one or more branches; the platform console exists for cases where you're operating this as a SaaS across multiple client companies.</p>
+        <p>Every record belongs to exactly one company, and within a company, to exactly one branch. If you're installing this for a single freight forwarder, you'll use one company with one or more branches; the platform console exists for cases where you're operating this as a multi-tenant deployment across multiple client companies.</p>
         <h3>Role-based from the ground up</h3>
         <p>Seven predefined roles — Company Admin, Operations Manager, Documentation Officer, Accounts Officer, Sales Executive, and two more — gate every module, action, and record. Permissions are enforced server-side on every request, not just hidden in the UI.</p>
       </div>

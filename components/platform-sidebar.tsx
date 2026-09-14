@@ -76,7 +76,7 @@ export function PlatformSidebar({
         {!isCollapsed ? (
           <div className="relative h-7 w-28 filter brightness-0 invert">
             <Image
-              src="/images/freito-logo.svg"
+              src="/images/freightfast-logo.svg"
               alt="FreightFast"
               fill
               priority

@@ -137,11 +137,11 @@ export function SplashScreen({ showTagline = true }: SplashScreenProps) {
         .shimmer-mask {
           position: relative;
           overflow: hidden;
-          mask-image: url('/images/freito-logo.svg');
+          mask-image: url('/images/freightfast-logo.svg');
           mask-size: contain;
           mask-repeat: no-repeat;
           mask-position: center;
-          -webkit-mask-image: url('/images/freito-logo.svg');
+          -webkit-mask-image: url('/images/freightfast-logo.svg');
           -webkit-mask-size: contain;
           -webkit-mask-repeat: no-repeat;
           -webkit-mask-position: center;
@@ -160,7 +160,7 @@ export function SplashScreen({ showTagline = true }: SplashScreenProps) {
           <div className="opacity-0 reduced-motion-fade flex flex-col items-center gap-5 text-center">
             <div className="relative w-[280px] h-[58px] sm:w-[360px] sm:h-[75px] filter brightness-0 invert">
               <Image
-                src="/images/freito-logo.svg"
+                src="/images/freightfast-logo.svg"
                 alt="FreightFast"
                 fill
                 priority
@@ -186,7 +186,7 @@ export function SplashScreen({ showTagline = true }: SplashScreenProps) {
               {/* Actual Logo Image */}
               <div className="relative w-full h-full opacity-0 animate-logo-entrance filter brightness-0 invert">
                 <Image
-                  src="/images/freito-logo.svg"
+                  src="/images/freightfast-logo.svg"
                   alt="FreightFast Logo"
                   fill
                   priority
