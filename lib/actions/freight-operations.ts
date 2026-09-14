@@ -12,6 +12,7 @@ import { emailSmtpProvider } from "@/lib/communications/providers/email-smtp";
 import { environmentProviderConfig } from "@/lib/communications/accounts";
 import type { EmailSmtpConfig } from "@/lib/communications/providers/types";
 import { branchScopeWhere, getCurrentBranchScope } from "@/lib/access/branch-access";
+import type { vendor_type, billoflading_approvalStatus } from "@/lib/generated/prisma/client";
 
 const date = (value: string) => value ? new Date(value) : null;
 const decimal = (value: string) => value ? Number(value) : null;
@@ -74,7 +75,7 @@ export async function createCarrierQuery(formData: FormData) {
 }
 
 // Vendor type → transport mode mapping
-function vendorTypesForMode(mode: string): string[] {
+function vendorTypesForMode(mode: string): vendor_type[] {
   if (mode === "SEA") return ["SHIPPING_LINE"];
   if (mode === "AIR") return ["AIRLINE"];
   if (mode === "LAND") return ["TRUCK_VENDOR"];
@@ -196,7 +197,7 @@ export async function sendCarrierQueryBlast(formData: FormData): Promise<{ ok: b
       companyId,
       deletedAt: null,
       status: "ACTIVE",
-      type: { in: allowedTypes as any[] },
+      type: { in: allowedTypes },
     },
     include: {
       vendorcontact: {
@@ -424,8 +425,8 @@ export async function saveBillOfLading(formData: FormData) {
   const existing = await prisma.billoflading.findUnique({ where: { shipmentJobId } });
   if (existing?.finalLocked && !checked(formData, "adminCorrection")) return;
   const finalLocked = checked(formData, "finalLocked");
-  const requestedApproval = (getString(formData, "approvalStatus") || "NOT_RECEIVED") as any;
-  const approvalStatus: any = finalLocked ? "FINAL_LOCKED" : requestedApproval;
+  const requestedApproval = (getString(formData, "approvalStatus") || "NOT_RECEIVED") as billoflading_approvalStatus;
+  const approvalStatus: billoflading_approvalStatus = finalLocked ? "FINAL_LOCKED" : requestedApproval;
   const now = new Date();
   const data = { documentType: (getString(formData, "documentType") || "HBL") as never, draftNumber: getString(formData, "draftNumber") || null, draftReceivedAt: date(getString(formData, "draftReceivedAt")), draftForwardedAt: date(getString(formData, "draftForwardedAt")), approvalStatus, customerApprovalAt: approvalStatus === "APPROVED_BY_CUSTOMER" ? new Date() : undefined, customerCorrectionRemarks: getString(formData, "customerCorrectionRemarks") || null, finalNumber: getString(formData, "finalNumber") || null, finalLocked, finalLockedAt: finalLocked ? new Date() : null, releaseType: (getString(formData, "releaseType") || "NOT_APPLICABLE") as never, releaseStatus: (getString(formData, "releaseStatus") || "PENDING") as never, releaseReference: getString(formData, "releaseReference") || null, paymentReceived: checked(formData, "paymentReceived"), notes: getString(formData, "notes") || null, updatedAt: now };
   const bl = await prisma.billoflading.upsert({ where: { shipmentJobId }, create: { id: randomUUID(), companyId, shipmentJobId, shippingInstructionId: getString(formData, "shippingInstructionId") || null, ...data }, update: data });

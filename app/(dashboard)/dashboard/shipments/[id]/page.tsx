@@ -16,6 +16,12 @@ import {
   transitionWorkflowStageAction,
   overrideWorkflowStageAction,
 } from "@/lib/actions/shipment-workflow";
+import type {
+  DocumentOwner,
+  DocumentScope,
+  DocumentRequirement,
+  DocumentTransportMode,
+} from "@/lib/documents/config";
 import {
   deleteShipmentDocument,
   rejectShipmentDocument,
@@ -406,10 +412,10 @@ export default async function ShipmentDetailPage({ params, searchParams }: PageP
       id: item.id,
       code: item.code || "",
       name: item.name,
-      owner: item.owner as any,
-      scope: item.media as any,
-      requirement: (isRequired ? 'MANDATORY' : 'OPTIONAL') as any,
-      transportMode: item.transportMode as any,
+      owner: item.owner as DocumentOwner,
+      scope: item.media as DocumentScope,
+      requirement: (isRequired ? 'MANDATORY' : 'OPTIONAL') as DocumentRequirement,
+      transportMode: item.transportMode as DocumentTransportMode,
       portalVisible: item.owner !== 'INTERNAL' && item.code !== 'debit_note' && item.code !== 'credit_note',
       category: item.media === 'IMPORT' ? 'IMPORT' : item.media === 'EXPORT' ? 'EXPORT' : 'COMMON',
       isRequired,
@@ -857,9 +863,9 @@ export default async function ShipmentDetailPage({ params, searchParams }: PageP
 
             {/* Stages list */}
             <div className="space-y-3">
-              {workflow?.stages.map((stage: any) => {
-                const isOverridden = workflow.overrides.some((o: any) => o.stageCode === stage.stageCode);
-                const hasManualAction = stage.requirements.length === 0 || stage.requirements.every((r: any) => r.type === "PREVIOUS_STAGE");
+              {workflow?.stages.map((stage) => {
+                const isOverridden = workflow.overrides.some((o) => o.stageCode === stage.stageCode);
+                const hasManualAction = stage.requirements.length === 0 || stage.requirements.every((r) => r.type === "PREVIOUS_STAGE");
                 const canCompleteManual = hasManualAction && (stage.status === "PENDING" || stage.status === "IN_PROGRESS" || stage.status === "BLOCKED");
 
                 return (
@@ -893,7 +899,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: PageP
                           {stage.requirements.length > 0 && (
                             <div className="mt-3 space-y-1 bg-slate-50/50 p-2.5 rounded border border-slate-100">
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unlock Requirements</p>
-                              {stage.requirements.map((req: any) => (
+                              {stage.requirements.map((req) => (
                                 <div key={req.id} className="flex items-center gap-2 text-xs text-slate-600">
                                   <span className={`inline-block h-2 w-2 rounded-full ${req.isFulfilled ? "bg-emerald-500" : "bg-red-500"}`} />
                                   <span className={req.isFulfilled ? "line-through text-slate-400" : "font-medium"}>

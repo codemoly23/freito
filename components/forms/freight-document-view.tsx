@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any -- `document` and its version `content` mirror the
+   Prisma Json-backed, per-template shape handled the same way in freight-document-forms.tsx. */
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";

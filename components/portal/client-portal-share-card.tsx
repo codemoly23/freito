@@ -33,6 +33,7 @@ export function ClientPortalShareCard({
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- window.location.origin isn't available during SSR; resolve it after mount.
       setOrigin(window.location.origin);
     }
   }, []);

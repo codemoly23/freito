@@ -100,7 +100,7 @@ const prisma = new Proxy(extendedPrisma, {
     if (typeof prop === "string" && !(prop in target)) {
       const lower = prop.toLowerCase();
       if (lower in target) {
-        return (target as any)[lower];
+        return (target as unknown as Record<string, unknown>)[lower];
       }
     }
     return Reflect.get(target, prop, receiver);

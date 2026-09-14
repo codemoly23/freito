@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { signOut } from "next-auth/react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +19,11 @@ export default function AccountSuspendedPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild variant="outline">
-            <Link href="/login">Back to login</Link>
+          <Button
+            variant="outline"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+          >
+            Back to login
           </Button>
         </CardContent>
       </Card>

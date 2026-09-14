@@ -46,6 +46,7 @@ export function PlatformSidebar({
   useEffect(() => {
     const stored = localStorage.getItem("platform-sidebar-collapsed");
     if (stored === "true") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of persisted sidebar state from localStorage.
       setIsCollapsed(true);
     }
   }, []);

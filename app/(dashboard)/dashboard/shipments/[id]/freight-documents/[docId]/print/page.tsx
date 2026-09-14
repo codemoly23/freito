@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- document `content` is a Prisma Json field whose shape is
+   defined per document template (HBL/HAWB/Debit Note/Manifest each use different fields), matching the
+   same convention used in components/forms/freight-document-forms.tsx for the same data. */
 import { Fragment, type ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
@@ -141,7 +144,7 @@ export default async function PrintFreightDocumentPage({
       const ordinalWord = ordinalWords[hblOriginalsLimit - 1] || String(hblOriginalsLimit);
       const suffix = hblOriginalsLimit === 1 ? "ORIGINAL" : "ORIGINALS";
       
-      let ordinalCurrentWord = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH", "EIGHTH", "NINTH", "TENTH"][i - 1] || String(i);
+      const ordinalCurrentWord = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH", "EIGHTH", "NINTH", "TENTH"][i - 1] || String(i);
 
       hblCopies.push({
         type: "original",

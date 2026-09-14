@@ -114,8 +114,8 @@ export async function saveDocumentMasterAction(
 
     revalidatePath("/dashboard/settings/documents");
     return successState(id ? "Document Master configuration updated." : "New Document Master item created.");
-  } catch (error: any) {
-    if (error.code === "P2002") {
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
       return validationError("A document with this unique code or name already exists.");
     }
     throw error;

@@ -16,6 +16,7 @@ export function SplashScreen({ showTagline = true }: SplashScreenProps) {
 
   useEffect(() => {
     if (hasSeenSplashGlobal) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- skip the splash immediately on repeat soft-navigations.
       setIsShowing(false);
       return;
     }

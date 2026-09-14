@@ -29,6 +29,7 @@ export function AIExtractMarksButton({ shipmentId, documentId, documentName }: A
 
   useEffect(() => {
     if (state.ok) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- close the modal once the save action reports success.
       setIsOpen(false);
       router.refresh();
     }

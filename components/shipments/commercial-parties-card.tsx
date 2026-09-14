@@ -35,6 +35,7 @@ export function CommercialPartiesCard({ shipmentId, initialParties }: Commercial
 
   useEffect(() => {
     if (state.ok) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- exit edit mode once the save action reports success.
       setIsEditing(false);
       router.refresh();
     }

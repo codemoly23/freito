@@ -157,6 +157,7 @@ export function AppSidebar({
   useEffect(() => {
     const stored = localStorage.getItem("sidebar-collapsed");
     if (stored === "true") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of persisted sidebar state from localStorage.
       setIsCollapsed(true);
     }
 
@@ -175,6 +176,7 @@ export function AppSidebar({
       return;
     }
     if (activeSectionLabel) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- keep the open nav section synced with the active route.
       setOpenSection(activeSectionLabel);
       localStorage.setItem("sidebar-open-section", activeSectionLabel);
     }
@@ -188,6 +190,7 @@ export function AppSidebar({
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- close the mobile drawer whenever the route changes.
     setIsMobileOpen(false);
   }, [pathname]);
 

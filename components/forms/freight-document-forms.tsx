@@ -818,7 +818,7 @@ export function FreightDocumentEditForm({
                     </div>
 
                     {(!content.transshipmentLegs || content.transshipmentLegs.length === 0) ? (
-                      <p className="text-xs text-slate-400 italic py-2">No transit legs added. Click 'Add Transit Leg' to specify routing details.</p>
+                      <p className="text-xs text-slate-400 italic py-2">No transit legs added. Click &apos;Add Transit Leg&apos; to specify routing details.</p>
                     ) : (
                       <div className="space-y-3 divide-y divide-slate-100">
                         {content.transshipmentLegs.map((leg: any, index: number) => (
@@ -2589,7 +2589,7 @@ export function FreightDocumentEditForm({
                         </div>
 
                         {(!content.transshipmentLegs || content.transshipmentLegs.length === 0) ? (
-                          <p className="text-xs text-slate-400 italic py-2">No transit legs added. Click 'Add Transit Leg' to specify routing details.</p>
+                          <p className="text-xs text-slate-400 italic py-2">No transit legs added. Click &apos;Add Transit Leg&apos; to specify routing details.</p>
                         ) : (
                           <div className="space-y-3 divide-y divide-slate-100">
                             {content.transshipmentLegs.map((leg: any, index: number) => (
